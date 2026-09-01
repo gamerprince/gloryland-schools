@@ -1,0 +1,1157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Stock Inventory — Gloryland Foundation Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+  <!-- TOP NAVIGATION -->
+  <nav class="bg-gray-800 text-white shadow-lg">
+    <div class="max-w-7xl mx-auto px-6">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <span class="font-black text-xl tracking-tight">GLORYLAND<span class="text-purple-400"> STOCK PORTAL</span></span>
+        </div>
+        <div class="flex items-center gap-4 text-sm font-bold">
+          <a href="portal.html" class="hover:text-purple-300 transition" onclick="sessionStorage.removeItem('stockAccess')">Lock / Exit</a>
+          <a href="index.html" class="hover:text-purple-300 transition">Main Website</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="max-w-7xl mx-auto px-6 py-10">
+
+    <!-- DASHBOARD SUMMARY CARDS -->
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-purple-600">
+        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Unique Items</div>
+        <div id="stat-total-items" class="text-3xl font-black text-purple-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Units in Stock</div>
+        <div id="stat-total-qty" class="text-3xl font-black text-blue-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-red-500">
+        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Low Stock Warnings</div>
+        <div id="stat-low-stock" class="text-3xl font-black text-red-600 mt-1">0</div>
+      </div>
+      <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-green-500">
+        <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Total Sales Logged</div>
+        <div id="stat-total-sales" class="text-3xl font-black text-green-600 mt-1">0</div>
+      </div>
+    </div>
+
+    <!-- MAIN GRID CONTAINER -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+
+     <!-- LEFT COLUMN: FORMS (Add/Restock & Issue Item) -->
+      <div class="space-y-10">
+
+        <!-- REGISTER NEW STOCK ITEM FORM -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-t-indigo-600 border border-indigo-200">
+          <div class="flex items-center gap-3 pb-3 mb-6 border-b border-indigo-100">
+            <span class="p-2.5 bg-indigo-50 rounded-xl text-xl">⚙️</span>
+            <div>
+              <h2 class="text-xl font-black text-indigo-900">Stock Name Register</h2>
+              <p class="text-xs text-indigo-500 font-semibold">Define new stock items & default pricing</p>
+            </div>
+          </div>
+
+          <form id="form-register-stock" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Item Category</label>
+              <select id="reg-item-category" class="w-full p-3 border rounded-lg bg-gray-50 text-sm font-semibold outline-none focus:border-indigo-500" required>
+                <option value="Uniform">Uniform</option>
+                <option value="Cardigans">Cardigans</option>
+                <option value="Exercise Books">Exercise Books</option>
+                <option value="Text Books">Text Books</option>
+                <option value="Socks">Socks</option>
+                <option value="Sportswear">Sportswear</option>
+                <option value="Other Accessories">Other Accessories</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Stock Item Name & Size/Class</label>
+              <input id="reg-item-name" type="text" placeholder="e.g., Nursery Uniform (Size 26)" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-indigo-500" required />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Default Unit Price (₦)</label>
+              <input id="reg-item-price" type="number" min="0" placeholder="e.g., 3500" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-indigo-500" required />
+            </div>
+            <button type="submit" class="w-full bg-indigo-700 text-white p-3.5 rounded-xl font-bold hover:bg-indigo-800 shadow-md transition">
+              Register Stock Name
+            </button>
+          </form>
+
+          <!-- REGISTERED ITEMS PREVIEW TABLE -->
+          <div class="mt-6 border-t pt-4">
+            <h3 class="text-xs font-bold uppercase text-indigo-400 mb-3">Registered Stock Names</h3>
+            <div class="max-h-48 overflow-y-auto border border-indigo-100 rounded-lg divide-y divide-gray-100">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-indigo-50/50 text-indigo-900 uppercase sticky top-0">
+                  <tr>
+                    <th class="p-2">Name</th>
+                    <th class="p-2">Category</th>
+                    <th class="p-2 text-right">Price (₦)</th>
+                    <th class="p-2 text-center">Action</th>
+                  </tr>
+                </thead>
+                <tbody id="registered-stock-table-body">
+                  <tr><td colspan="4" class="p-4 text-center text-gray-400">Loading registry...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- ADD OR RESTOCK ITEM FORM -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-t-purple-600 border border-purple-200">
+          <div class="flex items-center gap-3 pb-3 mb-6 border-b border-purple-100">
+            <span class="p-2.5 bg-purple-50 rounded-xl text-xl">📦</span>
+            <div>
+              <h2 class="text-xl font-black text-purple-900">Add / Restock Item</h2>
+              <p class="text-xs text-purple-500 font-semibold">Replenish stock quantities into inventory</p>
+            </div>
+          </div>
+
+          <form id="form-add-item" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Item Category</label>
+              <select id="item-category" class="w-full p-3 border rounded-lg bg-gray-50 text-sm font-semibold outline-none focus:border-purple-500" required>
+                <option value="ALL">All Categories</option>
+                <option value="Uniform">Uniform</option>
+                <option value="Cardigans">Cardigans</option>
+                <option value="Exercise Books">Exercise Books</option>
+                <option value="Text Books">Text Books</option>
+                <option value="Socks">Socks</option>
+                <option value="Sportswear">Sportswear</option>
+                <option value="Other Accessories">Other Accessories</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Select Registered Stock Item</label>
+              <select id="item-name-select" class="w-full p-3 border rounded-lg bg-gray-50 text-sm font-semibold outline-none focus:border-purple-500" required>
+                <option value="">-- Select Registered Item --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Restock / Entry Date</label>
+              <input id="item-entry-date" type="date" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-purple-500" required />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Quantity</label>
+                <input id="item-qty" type="number" min="1" placeholder="e.g., 50" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-purple-500" required />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Unit Price (₦)</label>
+                <input id="item-price" type="number" min="0" placeholder="e.g., 3500" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-purple-500" required />
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-purple-700 text-white p-3.5 rounded-xl font-bold hover:bg-purple-800 shadow-md transition">
+              Save to Stock
+            </button>
+          </form>
+        </div>
+
+        <!-- ISSUE / SELL ITEM FORM -->
+        <div class="bg-white p-8 rounded-2xl shadow-lg border-t-4 border-t-emerald-600 border border-emerald-200">
+          <div class="flex items-center gap-3 pb-3 mb-6 border-b border-emerald-100">
+            <span class="p-2.5 bg-emerald-50 rounded-xl text-xl">🏷️</span>
+            <div>
+              <h2 class="text-xl font-black text-emerald-900">Issue / Sell Item</h2>
+              <p class="text-xs text-emerald-600 font-semibold">Record outgoing stock sales & student issuance</p>
+            </div>
+          </div>
+
+          <form id="form-issue-item" class="space-y-4">
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Filter Item Category</label>
+              <select id="issue-category-select" class="w-full p-3 border rounded-lg bg-gray-50 text-sm font-semibold outline-none focus:border-emerald-500">
+                <option value="ALL">All Categories</option>
+                <option value="Uniform">Uniform</option>
+                <option value="Cardigans">Cardigans</option>
+                <option value="Exercise Books">Exercise Books</option>
+                <option value="Text Books">Text Books</option>
+                <option value="Socks">Socks</option>
+                <option value="Sportswear">Sportswear</option>
+                <option value="Other Accessories">Other Accessories</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Select Stock Item Name & Size</label>
+              <select id="issue-item-select" class="w-full p-3 border rounded-lg bg-gray-50 text-sm font-semibold outline-none focus:border-emerald-500" required>
+                <option value="">-- Choose Stock Item --</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Sale / Transaction Date</label>
+              <input id="issue-date" type="date" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-emerald-500" required />
+            </div>
+            <div>
+              <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Student / Buyer Name</label>
+              <input id="issue-student-name" type="text" placeholder="e.g., Chidi Okeke" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-emerald-500" required />
+            </div>
+            <div class="grid grid-cols-2 gap-4">
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Quantity Sold</label>
+                <input id="issue-qty" type="number" min="1" value="1" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-emerald-500" required />
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Class (Optional)</label>
+                <input id="issue-class" type="text" placeholder="e.g., Basic 2" class="w-full p-3 border rounded-lg text-sm outline-none focus:border-emerald-500" />
+              </div>
+            </div>
+            <button type="submit" class="w-full bg-emerald-700 text-white p-3.5 rounded-xl font-bold hover:bg-emerald-800 shadow-md transition">
+              Record Transaction & Issue
+            </button>
+          </form>
+        </div>
+
+      </div>
+
+      <!-- RIGHT COLUMN: TABLES (Stock Ledger & Sales Records) -->
+      <div class="lg:col-span-2 space-y-10">
+
+        <!-- INVENTORY TABLE -->
+        <div class="bg-white rounded-2xl shadow-lg border-t-4 border-t-purple-600 border border-purple-200 overflow-hidden">
+          <div class="p-8 border-b border-purple-100 space-y-6">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div class="flex items-center gap-3">
+                <span class="p-2.5 bg-purple-50 rounded-xl text-xl">📋</span>
+                <div>
+                  <h2 class="text-xl font-black text-purple-900">Stock Inventory Ledger</h2>
+                  <p class="text-xs text-purple-500 font-semibold">Track real-time stock balances & daily movement</p>
+                </div>
+              </div>
+              <div class="flex items-center gap-2 bg-purple-50 p-2 rounded-xl border border-purple-100">
+                <label class="text-xs font-bold uppercase text-purple-700">Ledger Date:</label>
+                <input id="ledger-date" type="date" class="p-2 border border-purple-200 rounded-lg bg-white text-xs font-bold outline-none focus:border-purple-500" />
+              </div>
+            </div>
+
+            <!-- FILTER CONTROLS -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-4 border-t border-purple-100">
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Filter Category</label>
+                <select id="filter-stock-category" class="w-full p-2.5 border border-purple-200 rounded-lg bg-purple-50/50 text-xs font-bold outline-none focus:border-purple-500">
+                  <option value="ALL">All Categories</option>
+                  <option value="Uniform">Uniforms</option>
+                  <option value="Cardigans">Cardigans</option>
+                  <option value="Exercise Books">Exercise Books</option>
+                  <option value="Text Books">Text Books</option>
+                  <option value="Socks">Socks</option>
+                  <option value="Sportswear">Sportswear</option>
+                  <option value="Other Accessories">Other Accessories</option>
+                </select>
+              </div>
+              <div>
+                <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Filter Specific Item</label>
+                <select id="filter-stock-item" class="w-full p-2.5 border border-purple-200 rounded-lg bg-purple-50/50 text-xs font-bold outline-none focus:border-purple-500">
+                  <option value="ALL">All Items</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead id="stock-table-head" class="bg-purple-50/60 border-b border-purple-100 text-xs font-bold uppercase text-purple-900">
+                <tr>
+                  <th class="p-4">Item Details</th>
+                  <th class="p-4">Category</th>
+                  <th class="p-4 text-center">Opening Stock</th>
+                  <th class="p-4 text-center">Received</th>
+                  <th class="p-4 text-center">Sold</th>
+                  <th class="p-4 text-center">Qty at Hand</th>
+                  <th class="p-4 text-right">Unit Price</th>
+                  <th class="p-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="stock-table-body" class="divide-y divide-gray-100 text-sm">
+                <tr><td colspan="8" class="p-8 text-center text-gray-400">Loading inventory data...</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- RECENT ISSUED / SALES LOG TABLE -->
+        <div class="bg-white rounded-2xl shadow-lg border-t-4 border-t-emerald-600 border border-emerald-200 overflow-hidden">
+          <div class="p-8 border-b border-emerald-100 flex items-center gap-3">
+            <span class="p-2.5 bg-emerald-50 rounded-xl text-xl">💳</span>
+            <div>
+              <h2 class="text-xl font-black text-emerald-900">Recent Issuances & Sales Activity</h2>
+              <p class="text-xs text-emerald-600 font-semibold">Audit log of transactions issued to students</p>
+            </div>
+          </div>
+          <div class="overflow-x-auto">
+            <table class="w-full text-left border-collapse">
+              <thead class="bg-emerald-50/60 border-b border-emerald-100 text-xs font-bold uppercase text-emerald-900">
+                <tr>
+                  <th class="p-4">Date</th>
+                  <th class="p-4">Student / Buyer</th>
+                  <th class="p-4">Item Issued</th>
+                  <th class="p-4 text-center">Qty</th>
+                  <th class="p-4 text-right">Total (₦)</th>
+                  <th class="p-4 text-center">Action</th>
+                </tr>
+              </thead>
+              <tbody id="sales-table-body" class="divide-y divide-gray-100 text-sm">
+                <tr><td colspan="6" class="p-8 text-center text-gray-400">No sales transactions logged yet.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  </div>
+
+  <script type="module">
+    import { db } from "./firebase-config.js";
+    import { collection, getDocs, addDoc, doc, updateDoc, deleteDoc, query } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+    const $ = id => document.getElementById(id);
+    const REQUIRED_PASSWORD = "*Stockuser11";
+
+    function verifyPassword() {
+      const input = prompt("Enter authorization password to delete:");
+      if (input === null) return false;
+      if (input === REQUIRED_PASSWORD) {
+        return true;
+      } else {
+        alert("Incorrect password! Action canceled.");
+        return false;
+      }
+    }
+
+    const defaultRegisteredItems = [
+      { id: "reg_1", name: "School Uniform (Primary)", category: "Uniform", price: 3500 },
+      { id: "reg_2", name: "School Cardigan (V-Neck)", category: "Cardigans", price: 4000 },
+      { id: "reg_3", name: "80 Leaves Exercise Book", category: "Exercise Books", price: 500 },
+      { id: "reg_4", name: "Primary Math Textbook Grade 1", category: "Text Books", price: 2500 },
+      { id: "reg_5", name: "Custom Branded Socks (Pair)", category: "Socks", price: 1000 }
+    ];
+
+    let registeredStockItems = [];
+    let currentInventory = [];
+    let salesHistory = [];
+    let stockLogs = [];
+
+    function getTodayISO() {
+      return new Date().toISOString().split('T')[0];
+    }
+
+    function formatDateDisplay(dateStr) {
+      if (!dateStr) return '';
+      const d = new Date(dateStr);
+      if (isNaN(d.getTime())) return dateStr;
+      const day = String(d.getDate()).padStart(2, '0');
+      const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+      return `${day}-${monthNames[d.getMonth()]}-${d.getFullYear()}`;
+    }
+
+    window.addEventListener("DOMContentLoaded", () => {
+      $("ledger-date").value = getTodayISO();
+      $("item-entry-date").value = getTodayISO();
+      $("issue-date").value = getTodayISO();
+
+      Promise.all([
+        loadRegisteredItems(),
+        loadInventory(),
+        loadSalesHistory(),
+        loadStockLogs()
+      ]).then(() => {
+        updateDashboardStats();
+      });
+
+      $("form-register-stock").onsubmit = handleRegisterStockItem;
+      $("form-add-item").onsubmit = handleAddItem;
+      $("form-issue-item").onsubmit = handleIssueItem;
+      $("item-category").onchange = populateRestockItemDropdown;
+      $("item-name-select").onchange = handleRestockItemSelection;
+      $("filter-stock-category").onchange = () => {
+        populateItemFilterDropdown();
+        renderStockTable();
+      };
+      $("filter-stock-item").onchange = renderStockTable;
+      $("ledger-date").onchange = renderStockTable;
+      $("issue-category-select").onchange = populateSelectDropdown;
+      $("issue-date").onchange = populateSelectDropdown;
+    });
+
+    async function loadRegisteredItems() {
+      try {
+        const snap = await getDocs(query(collection(db, "stock_registry")));
+        if (!snap.empty) {
+          registeredStockItems = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+          registeredStockItems = JSON.parse(localStorage.getItem("gloryland_stock_registry")) || defaultRegisteredItems;
+        }
+      } catch (e) {
+        registeredStockItems = JSON.parse(localStorage.getItem("gloryland_stock_registry")) || defaultRegisteredItems;
+      }
+      saveLocalRegistry();
+      renderRegisteredStockTable();
+      populateRestockItemDropdown();
+    }
+
+    async function loadInventory() {
+      try {
+        const snap = await getDocs(query(collection(db, "inventory")));
+        if (!snap.empty) {
+          currentInventory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+          currentInventory = JSON.parse(localStorage.getItem("gloryland_inventory")) || [];
+        }
+      } catch (e) {
+        currentInventory = JSON.parse(localStorage.getItem("gloryland_inventory")) || [];
+      }
+      saveLocalInventory();
+      populateItemFilterDropdown();
+      renderStockTable();
+      populateSelectDropdown();
+    }
+
+    async function loadSalesHistory() {
+      try {
+        const snap = await getDocs(query(collection(db, "stock_sales")));
+        if (!snap.empty) {
+          salesHistory = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+          salesHistory = JSON.parse(localStorage.getItem("gloryland_stock_sales")) || [];
+        }
+      } catch (e) {
+        salesHistory = JSON.parse(localStorage.getItem("gloryland_stock_sales")) || [];
+      }
+      renderSalesTable();
+    }
+
+    async function loadStockLogs() {
+      try {
+        const snap = await getDocs(query(collection(db, "stock_logs")));
+        if (!snap.empty) {
+          stockLogs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        } else {
+          stockLogs = JSON.parse(localStorage.getItem("gloryland_stock_logs")) || [];
+        }
+      } catch (e) {
+        stockLogs = JSON.parse(localStorage.getItem("gloryland_stock_logs")) || [];
+      }
+      renderStockTable();
+    }
+
+    function saveLocalInventory() {
+      localStorage.setItem("gloryland_inventory", JSON.stringify(currentInventory));
+    }
+
+    function saveLocalSales() {
+      localStorage.setItem("gloryland_stock_sales", JSON.stringify(salesHistory));
+    }
+
+    function saveLocalLogs() {
+      localStorage.setItem("gloryland_stock_logs", JSON.stringify(stockLogs));
+    }
+
+    function saveLocalRegistry() {
+      localStorage.setItem("gloryland_stock_registry", JSON.stringify(registeredStockItems));
+    }
+
+    function renderRegisteredStockTable() {
+      const tbody = $("registered-stock-table-body");
+      if (!tbody) return;
+
+      if (registeredStockItems.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-3 text-center text-gray-400">No registered names.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = registeredStockItems.map(item => `
+        <tr class="hover:bg-indigo-50/50">
+          <td class="p-2 font-bold text-gray-800">${item.name}</td>
+          <td class="p-2 text-gray-500">${item.category}</td>
+          <td class="p-2 text-right font-bold text-gray-700">₦${Number(item.price || 0).toLocaleString()}</td>
+          <td class="p-2 text-center space-x-1 whitespace-nowrap">
+            <button onclick="window.editRegisteredStock('${item.id}')" class="text-blue-600 font-bold hover:underline">Edit</button>
+            <button onclick="window.deleteRegisteredStock('${item.id}')" class="text-red-600 font-bold hover:underline">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function populateRestockItemDropdown() {
+      const selectedCategory = $("item-category").value;
+      const select = $("item-name-select");
+      const filtered = registeredStockItems.filter(i => selectedCategory === "ALL" || i.category === selectedCategory);
+
+      if (filtered.length === 0) {
+        select.innerHTML = `<option value="">-- No Registered Items in this Category --</option>`;
+        $("item-price").value = "";
+        return;
+      }
+
+      select.innerHTML = `<option value="">-- Choose Registered Stock --</option>` +
+        filtered.map(i => `<option value="${i.id}">[${i.category}] ${i.name} (₦${Number(i.price || 0).toLocaleString()})</option>`).join('');
+      $("item-price").value = "";
+    }
+
+    function handleRestockItemSelection() {
+      const selectedId = $("item-name-select").value;
+      const registeredItem = registeredStockItems.find(i => i.id === selectedId);
+      if (registeredItem && registeredItem.price !== undefined) {
+        $("item-price").value = registeredItem.price;
+      } else {
+        $("item-price").value = "";
+      }
+    }
+
+    function populateItemFilterDropdown() {
+      const selectedCat = $("filter-stock-category").value;
+      const select = $("filter-stock-item");
+      const filteredItems = currentInventory.filter(i => selectedCat === "ALL" || i.category === selectedCat);
+
+      select.innerHTML = `<option value="ALL">All Selected Category Items</option>` +
+        filteredItems.map(i => `<option value="${i.id}">${i.name}</option>`).join('');
+    }
+
+    function populateSelectDropdown() {
+      const select = $("issue-item-select");
+      const selectedCategory = $("issue-category-select") ? $("issue-category-select").value : "ALL";
+      const targetDate = $("issue-date") ? ($("issue-date").value || getTodayISO()) : getTodayISO();
+
+      const filteredItems = currentInventory.filter(i => selectedCategory === "ALL" || i.category === selectedCategory);
+
+      if (filteredItems.length === 0) {
+        select.innerHTML = `<option value="">-- No Stock Items Available in Category --</option>`;
+        return;
+      }
+
+      select.innerHTML = `<option value="">-- Select Stock Item --</option>` +
+        filteredItems.map(item => {
+          const stats = calculateLedgerForDate(item.id, targetDate);
+          const priceDisplay = item.price !== undefined ? item.price : getItemRegisteredPrice(item.name, item.category);
+          return `<option value="${item.id}">[${item.category}] ${item.name} - (${stats.atHand} at hand on ${formatDateDisplay(targetDate)}) - ₦${Number(priceDisplay).toLocaleString()}</option>`;
+        }).join('');
+    }
+
+    function getItemRegisteredPrice(name, category) {
+      const reg = registeredStockItems.find(i => i.name.toLowerCase() === name.toLowerCase() && i.category === category);
+      return reg ? Number(reg.price || 0) : 0;
+    }
+
+    function calculateLedgerForDate(itemId, targetDateStr) {
+      const itemLogs = stockLogs.filter(log => log.itemId === itemId);
+
+      let opening = 0;
+      let received = 0;
+      let sold = 0;
+
+      itemLogs.forEach(log => {
+        const logQty = Number(log.qty);
+        if (log.date < targetDateStr) {
+          if (log.type === 'received') opening += logQty;
+          if (log.type === 'sold') opening -= logQty;
+        } else if (log.date === targetDateStr) {
+          if (log.type === 'received') received += logQty;
+          if (log.type === 'sold') sold += logQty;
+        }
+      });
+
+      const atHand = opening + received - sold;
+      return { opening, received, sold, atHand };
+    }
+
+    function renderStockTable() {
+      const tbody = $("stock-table-body");
+      const thead = $("stock-table-head");
+      const filterCat = $("filter-stock-category").value;
+      const filterItem = $("filter-stock-item").value;
+      const targetDate = $("ledger-date").value || getTodayISO();
+
+      if (filterItem !== "ALL") {
+        thead.innerHTML = `
+          <tr>
+            <th class="p-4">Date</th>
+            <th class="p-4">Item Details</th>
+            <th class="p-4 text-center">Opening Stock</th>
+            <th class="p-4 text-center">Received</th>
+            <th class="p-4 text-center">Sold</th>
+            <th class="p-4 text-center">Qty at Hand</th>
+            <th class="p-4 text-right">Unit Price</th>
+            <th class="p-4 text-center">Action</th>
+          </tr>
+        `;
+
+        const item = currentInventory.find(i => i.id === filterItem);
+        if (!item) {
+           tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400 font-bold">Item not found.</td></tr>`;
+           return;
+        }
+
+        const itemLogs = stockLogs.filter(log => log.itemId === filterItem && log.date <= targetDate);
+        let uniqueDates = [...new Set(itemLogs.map(log => log.date))];
+        if (!uniqueDates.includes(targetDate)) uniqueDates.push(targetDate);
+        uniqueDates.sort();
+
+        if (uniqueDates.length === 0) {
+            tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400 font-bold">No activity recorded for this item yet.</td></tr>`;
+            return;
+        }
+
+        let runningQty = 0;
+        let html = "";
+        const displayPrice = item.price !== undefined ? item.price : getItemRegisteredPrice(item.name, item.category);
+
+        uniqueDates.forEach(dateStr => {
+          let received = 0;
+          let sold = 0;
+
+          const logsOnDate = itemLogs.filter(log => log.date === dateStr);
+          logsOnDate.forEach(log => {
+            const qty = Number(log.qty) || 0;
+            if (log.type === 'received') received += qty;
+            if (log.type === 'sold') sold += qty;
+          });
+
+          let opening = runningQty;
+          runningQty = opening + received - sold;
+          const isLow = runningQty <= 10;
+
+          html += `
+            <tr class="hover:bg-purple-50/50 transition-colors">
+              <td class="p-4 font-bold text-gray-900">${formatDateDisplay(dateStr)}</td>
+              <td class="p-4"><span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-bold">${item.name}</span></td>
+              <td class="p-4 text-center font-bold text-gray-600">${opening}</td>
+              <td class="p-4 text-center font-bold text-blue-600">+${received}</td>
+              <td class="p-4 text-center font-bold text-red-600">-${sold}</td>
+              <td class="p-4 text-center">
+                <span class="font-black ${isLow ? 'text-red-600 bg-red-100 px-2 py-1 rounded' : 'text-gray-800'}">
+                  ${runningQty} ${isLow ? '⚠️' : ''}
+                </span>
+              </td>
+              <td class="p-4 text-right font-bold text-gray-700">₦${Number(displayPrice).toLocaleString()}</td>
+              <td class="p-4 text-center">
+                <button onclick="window.deleteStockItemDate('${item.id}', '${dateStr}')" class="text-red-600 font-black border border-red-200 px-2 py-1 rounded text-xs hover:bg-red-600 hover:text-white transition">Delete</button>
+              </td>
+            </tr>
+          `;
+        });
+
+        tbody.innerHTML = html;
+
+      } else {
+        thead.innerHTML = `
+          <tr>
+            <th class="p-4">Item Details</th>
+            <th class="p-4">Category</th>
+            <th class="p-4 text-center">Opening Stock</th>
+            <th class="p-4 text-center">Received</th>
+            <th class="p-4 text-center">Sold</th>
+            <th class="p-4 text-center">Qty at Hand</th>
+            <th class="p-4 text-right">Unit Price</th>
+            <th class="p-4 text-center">Action</th>
+          </tr>
+        `;
+
+        let items = currentInventory.filter(item => filterCat === "ALL" || item.category === filterCat);
+
+        if (items.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="8" class="p-8 text-center text-gray-400 font-bold">No stock items found for selected filter.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = items.map(item => {
+          const stats = calculateLedgerForDate(item.id, targetDate);
+          const isLow = stats.atHand <= 10;
+          const displayPrice = item.price !== undefined ? item.price : getItemRegisteredPrice(item.name, item.category);
+          return `
+            <tr class="hover:bg-purple-50/50 transition-colors">
+              <td class="p-4 font-bold text-gray-900">${item.name}</td>
+              <td class="p-4"><span class="bg-purple-100 text-purple-800 text-xs px-2.5 py-1 rounded-full font-bold">${item.category}</span></td>
+              <td class="p-4 text-center font-bold text-gray-600">${stats.opening}</td>
+              <td class="p-4 text-center font-bold text-blue-600">+${stats.received}</td>
+              <td class="p-4 text-center font-bold text-red-600">-${stats.sold}</td>
+              <td class="p-4 text-center">
+                <span class="font-black ${isLow ? 'text-red-600 bg-red-100 px-2 py-1 rounded' : 'text-gray-800'}">
+                  ${stats.atHand} ${isLow ? '⚠️' : ''}
+                </span>
+              </td>
+              <td class="p-4 text-right font-bold text-gray-700">₦${Number(displayPrice).toLocaleString()}</td>
+              <td class="p-4 text-center space-x-1">
+                <button onclick="window.deleteStockItem('${item.id}')" class="text-red-600 font-black border border-red-200 px-2 py-1 rounded text-xs hover:bg-red-600 hover:text-white transition">Delete</button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+    }
+
+    function renderSalesTable() {
+      const tbody = $("sales-table-body");
+      if (salesHistory.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-gray-400">No sales transactions logged yet.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = salesHistory.slice().reverse().map(sale => `
+        <tr class="hover:bg-emerald-50/50 transition-colors">
+          <td class="p-4 text-sm font-semibold text-gray-600">${formatDateDisplay(sale.date)}</td>
+          <td class="p-4 text-sm font-bold text-gray-900">${sale.studentName || 'N/A'} <span class="text-xs font-normal text-gray-500">${sale.className ? '(' + sale.className + ')' : ''}</span></td>
+          <td class="p-4 text-sm font-bold text-purple-900">${sale.itemName}</td>
+          <td class="p-4 text-center font-black text-gray-700">${sale.qty}</td>
+          <td class="p-4 text-right font-black text-emerald-700">₦${Number(sale.totalAmount).toLocaleString()}</td>
+          <td class="p-4 text-center">
+            <button onclick="window.deleteSalesRecord('${sale.id}')" class="text-red-600 font-black border border-red-200 px-2 py-1 rounded text-xs hover:bg-red-600 hover:text-white transition">Delete</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function updateDashboardStats() {
+      const targetDate = $("ledger-date") ? ($("ledger-date").value || getTodayISO()) : getTodayISO();
+      $("stat-total-items").innerText = currentInventory.length;
+
+      let totalUnits = 0;
+      let lowStockCount = 0;
+
+      currentInventory.forEach(item => {
+        const stats = calculateLedgerForDate(item.id, targetDate);
+        totalUnits += stats.atHand;
+        if (stats.atHand <= 10) lowStockCount++;
+      });
+
+      $("stat-total-qty").innerText = totalUnits;
+      $("stat-low-stock").innerText = lowStockCount;
+      $("stat-total-sales").innerText = salesHistory.length;
+    }
+
+    async function handleRegisterStockItem(e) {
+      e.preventDefault();
+      const category = $("reg-item-category").value;
+      const name = $("reg-item-name").value.trim();
+      const price = Number($("reg-item-price").value);
+
+      if (!name) return alert("Please enter a stock item name.");
+      if (isNaN(price) || price < 0) return alert("Please enter a valid price.");
+      if (registeredStockItems.some(i => i.name.toLowerCase() === name.toLowerCase() && i.category === category)) {
+        return alert("This stock item is already registered in this category.");
+      }
+
+      const newItem = { name, category, price };
+      try {
+        const docRef = await addDoc(collection(db, "stock_registry"), newItem);
+        newItem.id = docRef.id;
+      } catch (e) {
+        newItem.id = "reg_" + Date.now();
+      }
+
+      registeredStockItems.push(newItem);
+      saveLocalRegistry();
+      renderRegisteredStockTable();
+      populateRestockItemDropdown();
+
+      $("form-register-stock").reset();
+      alert(`✅ Registered "${name}" under ${category} at ₦${price.toLocaleString()} successfully.`);
+    }
+
+    async function handleAddItem(e) {
+      e.preventDefault();
+      const selectedId = $("item-name-select").value;
+      const registeredItem = registeredStockItems.find(i => i.id === selectedId);
+      const category = $("item-category").value;
+      const quantity = Number($("item-qty").value);
+      const price = Number($("item-price").value) || (registeredItem ? registeredItem.price : 0);
+      const entryDate = $("item-entry-date").value || getTodayISO();
+
+      if (!registeredItem) {
+        return alert("Please select a registered stock item.");
+      }
+
+      let item = currentInventory.find(i => i.name.toLowerCase() === registeredItem.name.toLowerCase() && i.category === category);
+      if (!item) {
+        item = { name: registeredItem.name, category, price, createdAt: new Date().toISOString() };
+        try {
+          const docRef = await addDoc(collection(db, "inventory"), item);
+          item.id = docRef.id;
+        } catch (e) {
+          item.id = "loc_" + Date.now();
+        }
+        currentInventory.push(item);
+      } else {
+        item.price = price;
+        try {
+          if (item.id) await updateDoc(doc(db, "inventory", item.id), { price });
+        } catch (e) {}
+      }
+
+      const logEntry = { itemId: item.id, date: entryDate, type: 'received', qty: quantity };
+      try {
+        const docRef = await addDoc(collection(db, "stock_logs"), logEntry);
+        logEntry.id = docRef.id;
+      } catch (e) {
+        logEntry.id = "log_" + Date.now();
+      }
+
+      stockLogs.push(logEntry);
+      saveLocalInventory();
+      saveLocalLogs();
+
+      populateItemFilterDropdown();
+      renderStockTable();
+      populateSelectDropdown();
+      updateDashboardStats();
+      $("form-add-item").reset();
+      $("item-entry-date").value = getTodayISO();
+
+      alert(`📦 Stock added successfully! Added ${quantity} units of "${registeredItem.name}".`);
+    }
+
+    async function handleIssueItem(e) {
+      e.preventDefault();
+      const itemId = $("issue-item-select").value;
+      const studentName = $("issue-student-name").value.trim();
+      const qtyToIssue = Number($("issue-qty").value);
+      const className = $("issue-class").value.trim();
+      const saleDate = $("issue-date").value || getTodayISO();
+
+      const item = currentInventory.find(i => i.id === itemId);
+      if (!item) return alert("Please select a valid item.");
+
+      const itemPrice = item.price !== undefined ? item.price : getItemRegisteredPrice(item.name, item.category);
+      const dateStats = calculateLedgerForDate(itemId, saleDate);
+      if (dateStats.atHand < qtyToIssue) {
+        return alert(`Insufficient stock on ${formatDateDisplay(saleDate)}! Only ${dateStats.atHand} available.`);
+      }
+
+      const totalAmount = itemPrice * qtyToIssue;
+      const salesRecord = {
+        itemId: item.id,
+        itemName: item.name,
+        studentName,
+        className,
+        qty: qtyToIssue,
+        totalAmount,
+        date: saleDate
+      };
+      const logEntry = { itemId: item.id, date: saleDate, type: 'sold', qty: qtyToIssue };
+
+      try {
+        const salesDocRef = await addDoc(collection(db, "stock_sales"), salesRecord);
+        salesRecord.id = salesDocRef.id;
+        logEntry.salesId = salesDocRef.id;
+        const docRef = await addDoc(collection(db, "stock_logs"), logEntry);
+        logEntry.id = docRef.id;
+      } catch (e) {
+        salesRecord.id = "sale_" + Date.now();
+        logEntry.salesId = salesRecord.id;
+        logEntry.id = "log_" + Date.now();
+      }
+
+      salesHistory.push(salesRecord);
+      stockLogs.push(logEntry);
+      saveLocalSales();
+      saveLocalLogs();
+
+      $("ledger-date").value = saleDate;
+      renderStockTable();
+      populateSelectDropdown();
+      renderSalesTable();
+      updateDashboardStats();
+      $("form-issue-item").reset();
+      $("issue-date").value = getTodayISO();
+
+      alert(`🏷️ Transaction recorded! Issued ${qtyToIssue} x "${item.name}" to ${studentName} for ₦${totalAmount.toLocaleString()}.`);
+    }
+
+    window.editRegisteredStock = async (id) => {
+      const item = registeredStockItems.find(i => i.id === id);
+      if (!item) return;
+
+      const newName = prompt("Edit Stock Name:", item.name);
+      if (newName === null) return;
+
+      const newPriceStr = prompt("Edit Default Unit Price (₦):", item.price || 0);
+      if (newPriceStr === null) return;
+
+      const newPrice = Number(newPriceStr);
+      if (isNaN(newPrice) || newPrice < 0) return alert("Invalid price entered.");
+
+      item.name = newName.trim() || item.name;
+      item.price = newPrice;
+
+      try {
+        if (id && !id.startsWith("reg_")) {
+          await updateDoc(doc(db, "stock_registry", id), { name: item.name, price: item.price });
+        }
+      } catch (e) {}
+
+      const invItem = currentInventory.find(i => i.name.toLowerCase() === item.name.toLowerCase() && i.category === item.category);
+      if (invItem) {
+        invItem.price = item.price;
+        try {
+          if (invItem.id && !invItem.id.startsWith("loc_")) {
+            await updateDoc(doc(db, "inventory", invItem.id), { price: item.price });
+          }
+        } catch (e) {}
+        saveLocalInventory();
+        renderStockTable();
+      }
+
+      saveLocalRegistry();
+      renderRegisteredStockTable();
+      populateRestockItemDropdown();
+      populateSelectDropdown();
+      alert("Registered stock item updated successfully.");
+    };
+
+    window.deleteRegisteredStock = async (id) => {
+      if (!confirm("Are you sure you want to remove this item from the register?")) return;
+
+      registeredStockItems = registeredStockItems.filter(i => i.id !== id);
+      try {
+        if (id && !id.startsWith("reg_")) {
+          await deleteDoc(doc(db, "stock_registry", id));
+        }
+      } catch (e) {}
+
+      saveLocalRegistry();
+      renderRegisteredStockTable();
+      populateRestockItemDropdown();
+    };
+
+    window.deleteStockItem = async (id) => {
+      if (!verifyPassword()) return;
+      if (!confirm("Are you sure you want to delete this stock item from inventory?")) return;
+
+      currentInventory = currentInventory.filter(i => i.id !== id);
+      try {
+        if (id && !id.startsWith("loc_")) {
+          await deleteDoc(doc(db, "inventory", id));
+        }
+      } catch (e) {}
+
+      // Delete associated logs and sales for this full stock item
+      const logsToDelete = stockLogs.filter(log => log.itemId === id);
+      for (const log of logsToDelete) {
+        try {
+          if (log.id && !log.id.startsWith("log_")) {
+            await deleteDoc(doc(db, "stock_logs", log.id));
+          }
+        } catch(e) {}
+      }
+      stockLogs = stockLogs.filter(log => log.itemId !== id);
+
+      const salesToDelete = salesHistory.filter(s => s.itemId === id);
+      for (const sale of salesToDelete) {
+        try {
+          if (sale.id && !sale.id.startsWith("sale_")) {
+            await deleteDoc(doc(db, "stock_sales", sale.id));
+          }
+        } catch(e) {}
+      }
+      salesHistory = salesHistory.filter(s => s.itemId !== id);
+
+      saveLocalInventory();
+      saveLocalLogs();
+      saveLocalSales();
+      renderStockTable();
+      renderSalesTable();
+      populateSelectDropdown();
+      updateDashboardStats();
+    };
+
+    window.deleteStockItemDate = async (itemId, targetDateStr) => {
+      if (!verifyPassword()) return;
+      if (!confirm(`Are you sure you want to delete all entry/sale logs for ${formatDateDisplay(targetDateStr)}?`)) return;
+
+      const logsToDelete = stockLogs.filter(log => log.itemId === itemId && log.date === targetDateStr);
+
+      for (const log of logsToDelete) {
+        try {
+          if (log.id && !log.id.startsWith("log_")) {
+            await deleteDoc(doc(db, "stock_logs", log.id));
+          }
+        } catch (e) {}
+
+        if (log.salesId) {
+          salesHistory = salesHistory.filter(s => s.id !== log.salesId);
+          try {
+            if (log.salesId && !log.salesId.startsWith("sale_")) {
+              await deleteDoc(doc(db, "stock_sales", log.salesId));
+            }
+          } catch (e) {}
+        }
+      }
+
+      stockLogs = stockLogs.filter(log => !(log.itemId === itemId && log.date === targetDateStr));
+      salesHistory = salesHistory.filter(sale => !(sale.itemId === itemId && sale.date === targetDateStr));
+
+      saveLocalLogs();
+      saveLocalSales();
+      renderStockTable();
+      renderSalesTable();
+      populateSelectDropdown();
+      updateDashboardStats();
+    };
+
+    window.deleteSalesRecord = async (saleId) => {
+      if (!verifyPassword()) return;
+      if (!confirm("Are you sure you want to delete this issuance transaction?")) return;
+
+      const saleRecord = salesHistory.find(s => s.id === saleId);
+
+      salesHistory = salesHistory.filter(s => s.id !== saleId);
+      try {
+        if (saleId && !saleId.startsWith("sale_")) {
+          await deleteDoc(doc(db, "stock_sales", saleId));
+        }
+      } catch (e) {}
+
+      // Find associated sales log and delete it
+      const matchingLogIndex = stockLogs.findIndex(log => log.salesId === saleId || (saleRecord && log.itemId === saleRecord.itemId && log.date === saleRecord.date && log.type === 'sold' && Number(log.qty) === Number(saleRecord.qty)));
+      if (matchingLogIndex !== -1) {
+        const matchingLog = stockLogs[matchingLogIndex];
+        stockLogs.splice(matchingLogIndex, 1);
+        try {
+          if (matchingLog.id && !matchingLog.id.startsWith("log_")) {
+            await deleteDoc(doc(db, "stock_logs", matchingLog.id));
+          }
+        } catch (e) {}
+      }
+
+      saveLocalSales();
+      saveLocalLogs();
+      renderSalesTable();
+      renderStockTable();
+      populateSelectDropdown();
+      updateDashboardStats();
+    };
+
+    function formatStudentName(name) {
+      return name.trim().split(/\s+/).map(word => {
+        return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+      }).join(' ');
+    }
+
+    let registeredEntries = [];
+
+    async function loadNamesForStockSearch() {
+      try {
+        const tryCollections = ['admissions', 'students_registry'];
+        for (const colName of tryCollections) {
+          try {
+            const snap = await getDocs(collection(db, colName));
+            snap.forEach(d => {
+              const data = d.data() || {};
+              const name = data.fullName || data.pupilName || data.studentName || data.name;
+              const className = data.class || data.className || data.currentClass || '';
+              if (name) registeredEntries.push({ name: String(name).trim(), id: d.id, className });
+            });
+            if (registeredEntries.length) break;
+          } catch (e) {
+            console.warn('Collection read failed', colName, e);
+          }
+        }
+        const map = {};
+        registeredEntries.forEach(e => { map[e.name.toLowerCase()] = e; });
+        registeredEntries = Object.values(map).sort((a, b) => a.name.localeCompare(b.name));
+      } catch (e) {
+        console.error("Stock Search load error:", e);
+      }
+    }
+    loadNamesForStockSearch();
+
+    function attachPredictiveSearch(inputId, sourceArray = null, classSelectId = null) {
+      const input = document.getElementById(inputId);
+      if (!input) return;
+
+      const wrapper = document.createElement('div');
+      wrapper.className = 'relative w-full';
+      input.parentNode.insertBefore(wrapper, input);
+      wrapper.appendChild(input);
+
+      const dropdown = document.createElement('div');
+      dropdown.className = 'absolute z-50 w-full bg-white border border-gray-200 rounded-b-lg shadow-2xl max-h-48 overflow-y-auto hidden top-full left-0 mt-1';
+      wrapper.appendChild(dropdown);
+
+      input.addEventListener('input', () => {
+        const val = input.value.trim().toLowerCase();
+        dropdown.innerHTML = '';
+        if (!val) { dropdown.classList.add('hidden'); return; }
+
+        function levenshtein(a, b) {
+          const al = a.length, bl = b.length;
+          if (al === 0) return bl;
+          if (bl === 0) return al;
+          const v0 = new Array(bl + 1), v1 = new Array(bl + 1);
+          for (let j = 0; j <= bl; j++) v0[j] = j;
+          for (let i = 0; i < al; i++) {
+            v1[0] = i + 1;
+            for (let j = 0; j < bl; j++) {
+              const cost = a[i] === b[j] ? 0 : 1;
+              v1[j + 1] = Math.min(v1[j] + 1, v0[j + 1] + 1, v0[j] + cost);
+            }
+            for (let j = 0; j <= bl; j++) v0[j] = v1[j];
+          }
+          return v1[bl];
+        }
+
+        const source = sourceArray || registeredEntries;
+        const matches = source
+          .map(e => {
+            const name = e.name || '';
+            const nameLower = name.toLowerCase();
+            let score = levenshtein(val, nameLower);
+            if (nameLower === val) score -= 1000;
+            else if (nameLower.startsWith(val)) score -= 500;
+            else if (nameLower.includes(val)) score -= 200;
+            return { entry: e, score };
+          })
+          .sort((a, b) => a.score - b.score)
+          .map(x => x.entry);
+
+        if (matches.length > 0) {
+          dropdown.classList.remove('hidden');
+          matches.slice(0, 50).forEach(match => {
+            const div = document.createElement('div');
+            div.className = 'p-3 hover:bg-green-50 cursor-pointer text-sm font-bold text-gray-700 border-b border-gray-100 transition-colors';
+            const regex = new RegExp(`(${val})`, "gi");
+            div.innerHTML = match.name.replace(regex, "<span class='text-green-600'>$1</span>");
+            div.onmousedown = (e) => {
+              e.preventDefault();
+              input.value = match.name;
+              dropdown.classList.add('hidden');
+              if (classSelectId && document.getElementById(classSelectId) && match.className) {
+                document.getElementById(classSelectId).value = match.className;
+              }
+            };
+            dropdown.appendChild(div);
+          });
+        } else {
+          dropdown.classList.add('hidden');
+        }
+      });
+
+      input.addEventListener('blur', () => {
+        dropdown.classList.add('hidden');
+        if (input.value) input.value = formatStudentName(input.value);
+      });
+    }
+
+    setTimeout(() => {
+      attachPredictiveSearch("issue-student-name", registeredEntries, "issue-class");
+    }, 500);
+  </script>
+  <script>
+    // Security check: Lock out unauthorized access
+    if (sessionStorage.getItem('stockAccess') !== 'true') {
+      window.location.href = 'stock-login.html';
+    }
+  </script>
+</body>
+</html>

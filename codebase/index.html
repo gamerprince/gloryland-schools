@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Gloryland Foundation Schools</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Smooth Scroll -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            document.querySelectorAll("a[href^='#']").forEach(anchor => {
+                anchor.addEventListener("click", function(e) {
+                    e.preventDefault();
+                    document.querySelector(this.getAttribute("href")).scrollIntoView({ behavior: "smooth" });
+                });
+            });
+        });
+    </script>
+</head>
+
+<body class="bg-gray-50 text-gray-700">
+    <!-- NAVBAR -->
+    <header class="bg-white shadow fixed w-full z-20">
+        <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+            <h1 class="text-2xl font-extrabold text-blue-700">Gloryland Foundation Academy</h1>
+
+            <nav class="hidden md:flex space-x-8 text-gray-600 font-medium">
+                <a href="#about" class="hover:text-blue-600">About</a>
+                <a href="#facilities" class="hover:text-blue-600">Facilities</a>
+                <a href="#admissions" class="hover:text-blue-600">Admissions</a>
+                <a href="#gallery" class="hover:text-blue-600">Gallery</a>
+                <a href="#contact" class="hover:text-blue-600">Contact</a>
+                <a href="student.html" class="hover:text-blue-600">Student Exam</a>
+                <a href="portal.html" class="hover:text-blue-600 font-bold text-blue-700">Portal</a>
+                <a href="admin.html" class="text-red-600 font-bold">Admin Login</a>
+
+            </nav>
+        </div>
+    </header>
+
+    <!-- PORTAL BUTTON (Mobile Only) -->
+    <div class="md:hidden pt-24 bg-gradient-to-r from-blue-600 to-blue-700 py-8">
+        <div class="max-w-7xl mx-auto px-6 text-center">
+            <a href="portal.html" class="inline-block bg-white text-blue-700 font-bold px-8 py-3 rounded-lg shadow-lg hover:bg-gray-100 transition">
+                Enter School Portal
+            </a>
+        </div>
+    </div>
+
+    <!-- HERO SECTION -->
+    <section class="pt-32 bg-blue-600 text-white">
+        <div class="max-w-7xl mx-auto px-6 py-20 grid md:grid-cols-2 gap-10">
+            <div>
+                <h2 class="text-4xl md:text-5xl font-extrabold mb-6 leading-tight">
+                    Unlock Your Child's Full Potential
+                </h2>
+                <p class="text-lg mb-8">
+                    A modern learning environment where students are inspired, supported, and empowered.
+                </p>
+                <a href="#admissions" class="px-6 py-3 bg-white text-blue-700 font-bold rounded shadow hover:bg-gray-100">Get Started</a>
+            </div>
+
+            <div>
+                <img src="students learning in school.JPG" 
+                     class="rounded-xl shadow-lg" alt="Students learning" />
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT SECTION -->
+    <section id="about" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-6 grid md:grid-cols-2 gap-14">
+            <img src="gloryland kids 1.jpg"
+                 class="rounded-lg shadow-md" alt="Gloryland kids" />
+
+            <div>
+                <h3 class="text-3xl font-extrabold text-blue-700 mb-6">About Us</h3>
+                <p class="leading-relaxed mb-4">
+                    Gloryland Foundation Academy is committed to delivering quality education through innovative teaching, 
+                    modern facilities, and well-trained educators.
+                </p>
+                <p class="leading-relaxed">
+                    We aim to build confident, responsible, and disciplined leaders ready to shape the future.
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- FACILITIES -->
+    <section id="facilities" class="py-20 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <h3 class="text-3xl font-extrabold text-center text-blue-700 mb-10">Why Choose Us</h3>
+
+            <div class="grid md:grid-cols-3 gap-10">
+                <div class="bg-white p-8 rounded-lg shadow">
+                    <img src="library.JPG" class="rounded mb-4" alt="Library" />
+                    <h4 class="font-bold text-xl mb-3">Modern Library</h4>
+                    <p>Well-equipped library with digital learning resources.</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-lg shadow">
+                    <img src="ict.JPG" class="rounded mb-4" alt="ICT" />
+                    <h4 class="font-bold text-xl mb-3">ICT & E-Learning</h4>
+                    <p>State-of-the-art computer labs and online learning tools.</p>
+                </div>
+
+                <div class="bg-white p-8 rounded-lg shadow">
+                    <img src="sports&recreation2.JPG" class="rounded mb-4" alt="Sports" />
+                    <h4 class="font-bold text-xl mb-3">Sports & Recreation</h4>
+                    <p>Healthy balance of academics and physical education.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ADMISSIONS -->
+    <section id="admissions" class="py-20 bg-white">
+        <div class="max-w-7xl mx-auto px-6">
+            <h3 class="text-3xl font-extrabold text-blue-700 mb-8 text-center">Admissions</h3>
+
+            <div class="bg-blue-50 p-10 rounded-lg shadow">
+                <p class="text-lg mb-5">
+                    Admission is open for new students into Nursery, Primary, and Secondary levels.
+                </p>
+
+                <ul class="list-disc ml-6 space-y-2">
+                    <li>Birth Certificate</li>
+                    <li>Last School Report</li>
+                    <li>2 Passport Photographs</li>
+                    <li>Entrance Assessment</li>
+                </ul>
+
+                <a href="#contact" class="mt-8 inline-block px-6 py-3 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">
+                    Contact Admissions
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- GALLERY -->
+    <section id="gallery" class="py-20 bg-gray-100">
+        <div class="max-w-7xl mx-auto px-6">
+            <h3 class="text-3xl font-extrabold text-center text-blue-700 mb-6">Gallery</h3>
+
+            <!-- Event: Fruit Day (Feb 2026) -->
+            <div class="max-w-4xl mx-auto mb-8 text-center">
+                <h4 class="text-2xl font-black text-green-700">Fruit Day — Feb 2026</h4>
+                <p class="text-gray-600 mt-2">A colourful celebration of healthy eating — highlights from the day.</p>
+            </div>
+
+            <div class="max-w-6xl mx-auto grid grid-cols-2 sm:grid-cols-3 gap-6 items-stretch">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day1.JPG" alt="Fruit Day 1">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day2.JPG" alt="Fruit Day 2">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day3.JPG" alt="Fruit Day 3">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day4.JPG" alt="Fruit Day 4">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day5.JPG" alt="Fruit Day 5">
+                <img class="gallery-thumb w-full h-56 object-cover rounded-xl shadow-lg hover:scale-105 transform transition" src="Fruit day6.JPG" alt="Fruit Day 6">
+            </div>
+
+            <!-- Fallback / more gallery images -->
+            <div class="mt-10 grid md:grid-cols-3 gap-6">
+                <img class="rounded-xl shadow" src="https://images.unsplash.com/photo-1588075592392-416aa6f2e1ff?auto=format&fit=crop&w=800&q=80" alt="School activity">
+                <img class="rounded-xl shadow" src="https://images.unsplash.com/photo-1551033406-611cf9a28f67?auto=format&fit=crop&w=800&q=80" alt="Children reading">
+                <img class="rounded-xl shadow" src="https://images.unsplash.com/photo-1532094349884-543bc11b234d?auto=format&fit=crop&w=800&q=80" alt="Playground">
+            </div>
+        </div>
+    </section>
+
+    <!-- Lightbox modal for gallery images -->
+    <div id="lightbox" class="fixed inset-0 bg-black bg-opacity-80 flex items-center justify-center z-50 hidden">
+        <button id="lightbox-close" class="absolute top-6 right-6 text-white text-3xl leading-none">&times;</button>
+        <img id="lightbox-img" src="" alt="" class="max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl" />
+    </div>
+
+    <script>
+        (function(){
+            const thumbs = document.querySelectorAll('.gallery-thumb');
+            const lightbox = document.getElementById('lightbox');
+            const lightboxImg = document.getElementById('lightbox-img');
+            const closeBtn = document.getElementById('lightbox-close');
+
+            if (!thumbs.length || !lightbox || !lightboxImg) return;
+
+            thumbs.forEach(img => {
+                img.style.cursor = 'zoom-in';
+                img.addEventListener('click', () => {
+                    lightboxImg.src = img.src;
+                    lightboxImg.alt = img.alt || '';
+                    lightbox.classList.remove('hidden');
+                    document.body.style.overflow = 'hidden';
+                });
+            });
+
+            function closeLightbox(){
+                lightbox.classList.add('hidden');
+                lightboxImg.src = '';
+                document.body.style.overflow = '';
+            }
+
+            lightbox.addEventListener('click', (e) => {
+                if (e.target === lightbox || e.target === closeBtn) closeLightbox();
+            });
+
+            closeBtn.addEventListener('click', closeLightbox);
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') closeLightbox();
+            });
+        })();
+    </script>
+
+    <!-- CONTACT -->
+    <section id="contact" class="py-20 bg-white">
+        <div class="max-w-6xl mx-auto px-6">
+            <h3 class="text-3xl font-extrabold text-blue-700 mb-8 text-center">Contact Us</h3>
+
+            <div class="grid md:grid-cols-2 gap-10">
+                <div>
+                    <h4 class="text-xl font-bold mb-4">Reach Us</h4>
+                    <p class="mb-2">📍 Enugu, Nigeria</p>
+                    <p class="mb-2">📞 +234 80 5858 9227</p>
+                    <p>📧 info@glorylandfoundationacademy.com</p>
+                </div>
+
+                <form class="space-y-4 bg-gray-100 p-6 rounded shadow">
+                    <input type="text" placeholder="Full Name" class="w-full p-3 rounded border" required>
+                    <input type="email" placeholder="Email Address" class="w-full p-3 rounded border" required>
+                    <textarea placeholder="Your Message" class="w-full p-3 rounded border h-32"></textarea>
+                    <button class="w-full px-4 py-3 bg-blue-700 text-white rounded font-bold hover:bg-blue-800">
+                        Send Message
+                    </button>
+                </form>
+            </div>
+        </div>
+    </section>
+
+    <!-- FOOTER -->
+    <footer class="bg-blue-700 text-white py-6 text-center">
+        © 2025 Gloryland Foundation Academy— built by TechPal, Prince Somto
+    </footer>
+
+</body>
+</html>

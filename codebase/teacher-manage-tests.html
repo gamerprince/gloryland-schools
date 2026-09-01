@@ -1,0 +1,159 @@
+<!-- teacher-manage-tests.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Manage Tests — Teacher Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+  <!-- Navigation Bar -->
+  <nav class="bg-gray-800 text-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-4">
+      <div class="flex justify-between items-center h-16">
+        <div class="flex items-center gap-2">
+          <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+        </div>
+
+        <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+          <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+          <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+          <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+          <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+          <a href="teacher-manage-tests.html" class="border-b-2 border-white pb-1">Manage Test</a>
+          <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+          </button>
+          <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+      <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+      <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+      <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+      <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+      <a href="teacher-manage-tests.html" class="block text-indigo-400">Manage Test</a>
+      <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+      <hr class="border-gray-700">
+      <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+    </div>
+  </nav>
+  
+  <div class="max-w-5xl mx-auto px-6 py-10">
+
+    <div id="testsList" class="space-y-4"></div>
+  </div>
+
+<script type="module">
+import { auth, db } from './firebase-config.js';
+import { 
+  collection, query, where, getDocs, doc, deleteDoc, updateDoc 
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const $ = id => document.getElementById(id);
+
+// 🔥 FIXED AUTH CHECK
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "teacher-login.html";
+    return;
+  }
+  loadTests(user.uid);
+});
+
+// Load the tests owned by this teacher
+async function loadTests(uid) {
+  console.log("Current Teacher UID:", uid); // Check your browser console for this ID
+  
+  const q = query(collection(db,'tests'), where('teacherId','==', uid));
+  const snap = await getDocs(q);
+
+  const list = $('testsList');
+  list.innerHTML = '';
+
+  if (snap.empty) {
+    list.innerHTML = `
+      <div class="text-center py-10 text-gray-500 bg-white rounded shadow">
+        <p class="text-lg">No tests found for this account.</p>
+        <p class="text-sm mt-2">Ensure your tests in the database have the field: <br> 
+        <code class="bg-gray-100 px-1 py-0.5 rounded border">teacherId: "${uid}"</code></p>
+      </div>
+    `;
+    return;
+  }
+
+  for (const d of snap.docs) {
+    const t = d.data();
+
+    const card = document.createElement('div');
+    card.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
+
+    card.innerHTML = `
+      <div>
+        <div class="font-semibold">${t.title || 'Untitled Test'}</div>
+        <div class="text-sm text-gray-600">${t.className || ''} • ${t.subject || ''}</div>
+        <div class="text-xs text-gray-500">Status: ${t.status || 'draft'}</div>
+      </div>
+    `;
+
+    const actions = document.createElement('div');
+    actions.className = 'flex gap-2';
+
+    const edit = document.createElement('a');
+    edit.className = 'px-3 py-1 border rounded text-sm hover:bg-gray-50';
+    edit.textContent = 'Edit';
+    edit.href = `teacher-edit-test.html?testId=${d.id}`;
+
+    const view = document.createElement('button');
+    view.className = 'px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700';
+    view.textContent = 'View Attempts';
+    view.onclick = () => window.location.href = `teacher-view-attempts.html?testId=${d.id}`;
+
+    const publish = document.createElement('button');
+    publish.className = 'px-3 py-1 text-sm rounded text-white font-semibold';
+    publish.textContent = t.status === 'published' ? 'Published ✓' : 'Publish';
+    // Fix: Toggle classes correctly
+    publish.className = `px-3 py-1 text-sm rounded text-white font-semibold ${t.status === 'published' ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`;
+    
+    publish.onclick = async () => {
+      await updateDoc(doc(db, 'tests', d.id), {
+        status: t.status === 'published' ? 'draft' : 'published'
+      });
+      loadTests(uid);
+    };
+
+    const del = document.createElement('button');
+    del.className = 'px-3 py-1 border rounded text-sm hover:bg-red-50 text-red-600 border-red-200';
+    del.textContent = 'Delete';
+    del.onclick = async () => {
+      if (!confirm('Delete this test?')) return;
+      await deleteDoc(doc(db,'tests',d.id));
+      loadTests(uid);
+    };
+
+    actions.append(edit, view, publish, del);
+    card.append(actions);
+    list.append(card);
+  }
+}
+
+// navigation helpers
+const mobileBtn = $("mobile-menu-btn");
+const mobileMenu = $("mobile-menu");
+if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");
+if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+</script>
+
+</body>
+</html>

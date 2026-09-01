@@ -1,0 +1,265 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Create Test — Teacher Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+        <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="border-b-2 border-white pb-1">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+    <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block text-indigo-400">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <div class="bg-white p-6 rounded shadow">
+    <div class="grid gap-3">
+      <input id="title" placeholder="Test Title" class="p-2 border rounded" />
+      <select id="className" class="p-2 border rounded bg-white">
+        <option value="">Select Class</option>
+        <option>Basic 1 Onyx</option>
+        <option>Basic 1 Gold</option>
+        <option>Basic 2</option>
+        <option>Basic 3</option>
+        <option>Basic 4</option>
+        <option>Basic 5</option>
+        <option>Basic 6</option>
+        <option>JSS 1</option>
+        <option>JSS 2</option>
+        <option>JSS 3</option>
+      </select>
+      
+      <select id="subject" class="p-2 border rounded bg-white">
+        <option value="">Select Class First</option>
+      </select>
+
+      <div class="p-3 bg-amber-50 border border-amber-200 rounded text-xs text-amber-800">
+        <p class="font-bold mb-1 text-amber-900 underline">Correct Paste Format:</p>
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <p>1. What is the capital of France?</p>
+            <p>A. London</p>
+            <p>B. Paris</p>
+            <p>C. Berlin</p>
+            <p>D. Madrid</p>
+            <p>Ans: B</p>
+          </div>
+          <div>
+            <p>2. Which planet is the Red Planet?</p>
+            <p>A. Venus</p>
+            <p>B. Mars</p>
+            <p>C. Jupiter</p>
+            <p>D. Saturn</p> 
+            <p>Answer: B</p>
+          </div>
+        </div>
+        <p class="mt-2 font-semibold italic text-amber-900 border-t border-amber-200 pt-1">
+          * Important: Leave a blank line between each question.
+        </p>
+      </div>
+
+      <textarea id="questionsRaw" placeholder="Paste questions here (numbered)..." class="p-2 border rounded h-40"></textarea>
+
+      <div class="flex gap-2">
+        <button id="btn-parse" class="px-3 py-2 bg-indigo-600 text-white rounded">Parse & Preview</button>
+        <button id="btn-save" class="px-3 py-2 bg-green-600 text-white rounded">Save as Published</button>
+        <button id="btn-save-draft" class="px-3 py-2 border rounded">Save as Draft</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="previewArea" class="mt-6 hidden">
+    <h3 class="font-semibold mb-2">Preview</h3>
+    <div id="previewList" class="space-y-3"></div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from './firebase-config.js';
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { 
+  collection, addDoc, serverTimestamp, doc, getDoc 
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+let teacherId = null;
+
+// 1. Authenticate Teacher
+onAuthStateChanged(auth, user => {
+  if (user) {
+    teacherId = user.uid;
+    console.log("Teacher logged in:", teacherId);
+  } else {
+    window.location.href = "portal.html";
+  }
+});
+
+// 2. Load Subjects when Class Changes
+$("className").onchange = async (e) => {
+  const selectedClass = e.target.value;
+  const subjectSelect = $("subject");
+  
+  subjectSelect.innerHTML = '<option value="">-- Loading Subjects... --</option>';
+
+  if (!selectedClass) {
+    subjectSelect.innerHTML = '<option value="">Select Class First</option>';
+    return;
+  }
+
+  if (!teacherId) {
+    alert("Authentication error. Please refresh the page.");
+    return;
+  }
+
+  try {
+    // Matches ID format from teacher-register-subjects.html
+    const docId = `${teacherId}_${selectedClass.replace(/\s+/g, '')}`;
+    const docRef = doc(db, "teacher_assignments", docId);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      const data = docSnap.data();
+      const subjects = data.subjects || [];
+      
+      if (subjects.length > 0) {
+        subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+        subjects.forEach(sub => {
+          const opt = document.createElement("option");
+          opt.value = sub;
+          opt.textContent = sub;
+          subjectSelect.appendChild(opt);
+        });
+      } else {
+        subjectSelect.innerHTML = '<option value="">No subjects found for this class</option>';
+      }
+    } else {
+      subjectSelect.innerHTML = '<option value="">No registered subjects found</option>';
+    }
+  } catch (err) {
+    console.error("Firestore Error:", err);
+    subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
+  }
+};
+
+// 3. Parser Logic
+function parseQuestions(rawText) {
+  const blocks = rawText.split(/\n\s*\n/);
+  const questions = [];
+  blocks.forEach(block => {
+    const lines = block.split("\n").map(l => l.trim()).filter(Boolean);
+    let questionText = "";
+    let options = [];
+    let answerLetter = "";
+
+    lines.forEach(line => {
+      line = line.replace(/^\d+[\.\)]\s*/, "");
+      const ansMatch = line.match(/^ans(wer)?\s*[:\-]?\s*([A-D])/i);
+      if (ansMatch) {
+        answerLetter = ansMatch[2].toUpperCase();
+        return;
+      }
+      const optMatch = line.match(/^([A-Da-d])[\.\)\:\-]\s*(.+)/);
+      if (optMatch) {
+        options.push(optMatch[2].trim());
+        return;
+      }
+      questionText += line + " ";
+    });
+
+    if (questionText.trim() && options.length >= 2) {
+      questions.push({
+        text: questionText.trim(),
+        options,
+        answer: answerLetter 
+      });
+    }
+  });
+  return questions;
+}
+
+$("btn-parse").addEventListener("click", () => {
+  const raw = $("questionsRaw").value.trim();
+  const previewArea = $("previewArea");
+  const previewList = $("previewList");
+  if (!raw) { alert("Paste questions first"); return; }
+  const parsed = parseQuestions(raw);
+  previewList.innerHTML = "";
+  previewArea.classList.remove("hidden");
+  parsed.forEach((q, i) => {
+    const div = document.createElement("div");
+    div.className = "p-3 border rounded bg-white text-sm";
+    div.innerHTML = `<p class="font-bold">Q${i+1}. ${q.text}</p>` + 
+      q.options.map(opt => `<p class="ml-4">• ${opt}</p>`).join('') + 
+      `<p class="text-green-600 mt-1">Answer Key: ${q.answer}</p>`;
+    previewList.appendChild(div);
+  });
+});
+
+$("btn-save").addEventListener("click", () => saveTest("published"));
+$("btn-save-draft").addEventListener("click", () => saveTest("draft"));
+
+async function saveTest(status) {
+  const title = $("title").value.trim();
+  const subject = $("subject").value.trim();
+  const className = $("className").value;
+  const raw = $("questionsRaw").value.trim();
+
+  if (!teacherId) { alert("Not authenticated"); return; }
+  if (!title || !subject || !className || !raw) { alert("Fill all fields"); return; }
+  
+  const questions = parseQuestions(raw);
+  if (questions.length === 0) { alert("No valid questions parsed"); return; }
+
+  try {
+    const testDoc = await addDoc(collection(db, "tests"), {
+      teacherId, title, subject, className, status, createdAt: serverTimestamp()
+    });
+    const questionsCol = collection(db, `tests/${testDoc.id}/questions`);
+    for (const q of questions) { await addDoc(questionsCol, q); }
+    alert("Test saved successfully!");
+    window.location.href = "teacher-manage-tests.html";
+  } catch (err) { console.error(err); alert("Error saving test"); }
+}
+
+// navigation helpers (mobile menu & logout)
+const mobileBtn = $("mobile-menu-btn");
+const mobileMenu = $("mobile-menu");
+if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");
+if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+</script>
+</body>
+</html>

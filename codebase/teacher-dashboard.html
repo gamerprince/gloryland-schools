@@ -1,0 +1,327 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teacher Dashboard — Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="border-b-2 border-white pb-1">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+        <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="hover:text-indigo-300 transition">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block text-indigo-400">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+    <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block hover:text-indigo-300">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="open-password-modal-mob" class="block text-sm text-gray-400">Change Password</button>
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+<div class="max-w-6xl mx-auto px-6 py-10">
+
+  <div class="mb-8 grid grid-cols-1 md:grid-cols-3 gap-4">
+    <a href="teacher-create-test.html" class="p-4 bg-green-600 text-white rounded-xl shadow-md font-bold text-center hover:bg-green-700 transition transform hover:scale-[1.02]">
+      ➕ Create New Test
+    </a>
+    <a href="teacher-manage-tests.html" class="p-4 bg-blue-600 text-white rounded-xl shadow-md font-bold text-center hover:bg-blue-700 transition transform hover:scale-[1.02]">
+      ⚙️ Manage My Tests
+    </a>
+    <a href="teacher-register-subjects.html" class="p-4 bg-indigo-600 text-white rounded-xl shadow-md font-bold text-center hover:bg-indigo-700 transition transform hover:scale-[1.02]">
+      📚 Register My Subjects
+    </a>
+  </div>
+  
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
+      <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Students in Class</div>
+      <div id="stat-students" class="text-3xl font-black text-blue-600 mt-1">-</div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500">
+      <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Students With Results</div>
+      <div id="stat-results" class="text-3xl font-black text-indigo-600 mt-1">-</div>
+    </div>
+    <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-orange-500">
+      <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Tests for this Class</div>
+      <div id="stat-tests" class="text-3xl font-black text-orange-600 mt-1">-</div>
+    </div>
+  </div>
+
+  <div class="bg-white p-6 rounded-2xl shadow-md border border-gray-100 mb-8">
+    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
+      <div>
+        <h2 class="text-xl font-black text-gray-800">Class Management</h2>
+        <p class="text-sm text-gray-500">Select a class to view registered students and compiled scores.</p>
+      </div>
+      <select id="filter-class" class="p-3 border-2 border-indigo-100 rounded-lg bg-gray-50 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 focus:bg-white min-w-[200px] transition-colors">
+        <option value="">-- Select Class --</option>
+        <option>Basic 1 Onyx</option>
+        <option>Basic 1 Gold</option>
+        <option>Basic 2</option>
+        <option>Basic 3</option>
+        <option>Basic 4</option>
+        <option>Basic 5</option>
+        <option>Basic 6</option>
+        <option>JSS 1</option>
+        <option>JSS 2</option>
+        <option>JSS 3</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="flex gap-4 mb-4 border-b">
+    <button id="tab-accounts" class="pb-2 px-4 font-bold border-b-4 border-blue-600 text-blue-600 transition-colors">Student Accounts</button>
+  </div>
+
+  <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
+    <div class="overflow-x-auto">
+      <table class="w-full text-left border-collapse">
+        <thead id="table-head" class="bg-gray-50 border-b">
+           </thead>
+        <tbody id="main-list" class="divide-y divide-gray-100 text-sm">
+          <tr><td class="p-10 text-center text-gray-400">Please select a class above to view data.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div id="password-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+  <div class="bg-white p-8 rounded-2xl max-w-sm w-full shadow-2xl">
+    <h3 class="text-xl font-black mb-4">Change Password</h3>
+    <div class="space-y-4">
+      <input id="current-password" type="password" placeholder="Current Password" class="w-full p-3 border rounded-lg">
+      <input id="new-password" type="password" placeholder="New Password (min 6 chars)" class="w-full p-3 border rounded-lg">
+      <input id="confirm-password" type="password" placeholder="Confirm Password" class="w-full p-3 border rounded-lg">
+      <button id="btn-update-password" class="w-full bg-indigo-600 text-white p-3 rounded-lg font-bold">Update</button>
+      <button onclick="document.getElementById('password-modal').classList.add('hidden')" class="w-full text-gray-400 text-sm hover:text-gray-700">Cancel</button>
+      <div id="password-msg" class="text-center text-xs mt-2 font-bold"></div>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db } from "./firebase-config.js";
+  import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+  const $ = id => document.getElementById(id);
+  let currentTab = "accounts";
+
+  onAuthStateChanged(auth, (user) => {
+    if (!user) window.location.href = "portal.html";
+  });
+// Mobile Menu Toggle Logic
+  const mobileBtn = $("mobile-menu-btn");
+  const mobileMenu = $("mobile-menu");
+  
+  mobileBtn.onclick = () => {
+    mobileMenu.classList.toggle("hidden");
+  };
+
+  // Wire up mobile logout and password buttons
+  $("logoutBtnMob").onclick = () => signOut(auth).then(() => window.location.href="portal.html");
+  if($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(() => window.location.href="portal.html");
+  
+  $("open-password-modal-mob").onclick = () => {
+    mobileMenu.classList.add("hidden");
+    $("password-modal").classList.remove("hidden");
+  };
+  $("filter-class").onchange = loadData;
+  $("tab-accounts").onclick = () => switchTab("accounts");
+
+  function switchTab(tab) {
+    currentTab = tab;
+    $("tab-accounts").className = tab === "accounts" ? "pb-2 px-4 font-bold border-b-4 border-blue-600 text-blue-600" : "pb-2 px-4 font-bold border-b-4 border-transparent text-gray-400";
+    loadData();
+  }
+
+  async function loadData() {
+    const className = $("filter-class").value;
+    if(!className) {
+      $("stat-students").textContent = "-";
+      $("stat-results").textContent = "-";
+      $("stat-tests").textContent = "-";
+      $("main-list").innerHTML = '<tr><td colspan="5" class="p-10 text-center text-gray-400">Please select a class above to view data.</td></tr>';
+      return;
+    }
+
+    const tbody = $("main-list");
+    const thead = $("table-head");
+    tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center font-bold text-gray-500 animate-pulse">Loading class data...</td></tr>';
+
+    try {
+      // 1. Fetch Students
+      const qStudents = query(collection(db, "students"), where("className", "==", className));
+      const sSnap = await getDocs(qStudents);
+      $("stat-students").textContent = sSnap.size;
+
+      // 2. Fetch Results
+      const qResults = query(collection(db, "compiledResults"), where("className", "==", className));
+      const rSnap = await getDocs(qResults);
+      
+      // Calculate unique students with results
+      const uniqueStudents = new Set();
+      rSnap.forEach(d => uniqueStudents.add((d.data().studentNameLower || d.data().studentName).toLowerCase()));
+      $("stat-results").textContent = uniqueStudents.size;
+
+      // 3. Fetch Tests
+      const qTests = query(collection(db, "tests"), where("className", "==", className));
+      const tSnap = await getDocs(qTests);
+      $("stat-tests").textContent = tSnap.size;
+
+      // RENDER TABS
+      if (currentTab === "accounts") {
+        thead.innerHTML = `<tr><th class="p-4">Student Name</th><th class="p-4 hidden sm:table-cell">Email / Login ID</th><th class="p-4 hidden sm:table-cell">Joined Date</th><th class="p-4 text-center">Actions</th></tr>`;
+        tbody.innerHTML = sSnap.empty ? `<tr><td colspan="4" class="p-10 text-center text-gray-400">No student accounts found for ${className}.</td></tr>` : "";
+        
+        const accounts = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
+        accounts.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+
+        accounts.forEach(s => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-blue-50 transition-colors">
+              <td class="p-4 font-bold text-gray-900">${s.name}</td>
+              <td class="p-4 hidden sm:table-cell text-gray-600">${s.email}</td>
+              <td class="p-4 hidden sm:table-cell text-xs text-gray-500">${s.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
+              <td class="p-4 text-center space-x-2">
+                <button onclick="window.location.href='teacher-compiled-result.html?name=${encodeURIComponent(s.name)}&class=${encodeURIComponent(className)}'" class="text-indigo-600 font-black border border-indigo-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-indigo-600 hover:text-white transition-colors text-[10px]">SCORE</button>
+                <button onclick="editStudent('${s.id}', '${s.name}')" class="text-blue-600 font-black border border-blue-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-blue-600 hover:text-white transition-colors text-[10px]">EDIT</button>
+                <button onclick="deleteStudent('${s.id}', '${s.name}')" class="text-red-600 font-black border border-red-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-red-600 hover:text-white transition-colors text-[10px]">DELETE</button>
+              </td>
+            </tr>`;
+        });
+      } else {
+        thead.innerHTML = `<tr><th class="p-4">Student Name</th><th class="p-4">Subjects Breakdown</th><th class="p-4 text-center">Grand Total</th><th class="p-4 text-center">Action</th></tr>`;
+        tbody.innerHTML = rSnap.empty ? `<tr><td colspan="4" class="p-10 text-center text-gray-400">No results have been compiled/saved for ${className} yet.</td></tr>` : "";
+        
+        // Grouping Logic
+        const grouped = {};
+        rSnap.forEach(d => {
+          const r = d.data();
+          const key = (r.studentNameLower || r.studentName).trim();
+          if (!grouped[key]) {
+            grouped[key] = { name: r.studentName, total: 0, subjects: [] };
+          }
+          grouped[key].total += (r.total || 0);
+          grouped[key].subjects.push(`<span class="inline-block bg-gray-100 text-gray-700 px-2 py-0.5 rounded text-[10px] font-bold m-0.5 border border-gray-200">${r.subject}: ${r.total}</span>`);
+        });
+
+        // Render Grouped Rows
+        Object.values(grouped).sort((a, b) => b.total - a.total).forEach(student => {
+          tbody.innerHTML += `
+            <tr class="hover:bg-indigo-50 transition-colors">
+              <td class="p-4 font-bold text-gray-900">${student.name}</td>
+              <td class="p-4">${student.subjects.join('')}</td>
+              <td class="p-4 text-center font-black text-indigo-700 text-lg">${student.total}</td>
+              <td class="p-4 text-center">
+                 <button onclick="window.location.href='teacher-compiled-result.html?name=${encodeURIComponent(student.name)}&class=${encodeURIComponent(className)}'" class="text-indigo-600 font-black border border-indigo-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-indigo-600 hover:text-white transition-colors text-[10px]">EDIT SCORES</button>
+              </td>
+            </tr>`;
+        });
+      }
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="4" class="p-10 text-center text-red-500 font-bold">Error loading data.</td></tr>`;
+    }
+  }
+
+  // GLOBAL ACTIONS FOR EDIT/DELETE
+  window.editStudent = async (docId, oldName) => {
+    const newName = prompt("Enter the corrected name for the student:", oldName);
+    if (!newName || newName.trim() === oldName) return;
+    try {
+      await updateDoc(doc(db, "students", docId), { name: newName.trim() });
+      loadData(); // Refresh the list
+    } catch (err) {
+      alert("Error updating student: " + err.message);
+    }
+  };
+
+  window.deleteStudent = async (docId, name) => {
+    if (!confirm(`WARNING: Are you sure you want to completely delete the account for "${name}"? This cannot be undone.`)) return;
+    try {
+      await deleteDoc(doc(db, "students", docId));
+      loadData(); // Refresh the list
+    } catch (err) {
+      alert("Error deleting student: " + err.message);
+    }
+  };
+
+  // PASSWORD MANAGEMENT
+  $("open-password-modal").onclick = () => {
+    $("password-modal").classList.remove("hidden");
+    $("password-msg").textContent = "";
+  };
+
+  const updatePwBtn = $("btn-update-password");
+  if (updatePwBtn) {
+    updatePwBtn.onclick = async () => {
+      const curPw = $("current-password").value;
+      const newPw = $("new-password").value;
+      const cfPw = $("confirm-password").value;
+      const msg = $("password-msg");
+
+    if (!curPw || !newPw || !cfPw) return msg.textContent = "❌ All fields required";
+    if (newPw !== cfPw) {
+      msg.className = "text-center text-xs mt-2 font-bold text-red-600";
+      return msg.textContent = "❌ Passwords do not match!";
+    }
+    if (newPw.length < 6) {
+      msg.className = "text-center text-xs mt-2 font-bold text-red-600";
+      return msg.textContent = "❌ New password must be at least 6 characters";
+    }
+
+    try {
+      const user = auth.currentUser;
+      const credential = EmailAuthProvider.credential(user.email, curPw);
+      await reauthenticateWithCredential(user, credential);
+      await updatePassword(user, newPw);
+      msg.className = "text-center text-xs mt-2 font-bold text-green-600";
+      msg.textContent = "✅ Password Updated!";
+      setTimeout(() => $("password-modal").classList.add("hidden"), 1500);
+    } catch (err) {
+      msg.className = "text-center text-xs mt-2 font-bold text-red-600";
+      msg.textContent = "❌ " + (err.message.includes("wrong-password") ? "Current password is incorrect" : err.message);
+    }
+    };
+  }
+
+  const logoutBtn = $("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.onclick = async () => {
+      await signOut(auth);
+      window.location.href = "portal.html";
+    };
+  }
+</script>
+</body>
+</html>

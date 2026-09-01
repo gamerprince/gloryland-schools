@@ -1,0 +1,179 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Class Ledgers — Bursary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Mobile-first, extra large text */
+    th, td { 
+      border: 1px solid #cbd5e1; 
+      padding: 24px 18px; /* Even more padding */
+      font-size: 20px;  /* bigger by default */
+      font-weight: 600;
+      white-space: nowrap;
+    }
+    th { 
+      background: #e0f2fe; 
+      font-weight: 900; 
+      color: #1e293b;
+      text-transform: uppercase;
+      font-size: 18px;
+      padding: 22px 16px;
+    }
+    /* Highlight total column */
+    td:nth-child(4) {
+      background: #f0fdf4;
+      font-weight: 800;
+      color: #15803d;
+      font-size: 22px;
+    }
+    th:nth-child(4) {
+      background: #dcfce7;
+    }
+    /* Mobile optimization for the container */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      border-radius: 12px;
+      box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+    }
+    /* Extra-large text on narrow devices */
+    @media (max-width: 768px) {
+      th, td {
+        padding: 28px 20px;
+        font-size: 24px;
+      }
+      th {
+        font-size: 20px;
+      }
+      td:nth-child(4) {
+        font-size: 26px;
+      }
+    }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen p-6">
+<nav class="bg-green-800 text-white p-4 flex justify-between print:hidden">
+  <span class="font-bold">Bursary: Class Ledger</span>
+  <a href="bursary-dashboard.html" class="underline text-sm hover:text-green-200">Back to Dashboard</a>
+</nav>
+
+<div class="p-6">
+  <div class="mb-6 flex gap-4 items-end print:hidden">
+    <div>
+      <label class="block text-xs font-bold text-gray-500 mb-1">Select Class</label>
+      <select id="filterClass" class="p-2 border rounded bg-white">
+        <option>Daycare</option>
+        <option>Kindergarten 1 (KG1)</option>
+        <option>Kindergarten 2 (KG2)</option>
+        <option>Nursery 1</option>
+        <option>Nursery 2</option>
+        <option>Nursery 3</option>
+        <option>Basic 1 Onyx</option>
+        <option>Basic 1 Gold</option>
+        <option>Basic 2</option>
+        <option>Basic 3</option>
+        <option>Basic 4</option>
+        <option>Basic 5</option>
+        <option>Basic 6</option>
+        <option>JSS 1</option>
+        <option>JSS 2</option>
+        <option>JSS 3</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-500 mb-1">Select Term</label>
+      <select id="filterTerm" class="p-2 border rounded bg-white">
+        <option>1st Term</option>
+        <option>2nd Term</option>
+        <option>3rd Term</option>
+      </select>
+    </div>
+    <button id="load" class="bg-green-600 text-white px-6 py-2 rounded font-bold">LOAD LEDGER</button>
+  </div>
+
+<div class="p-4 md:p-8">
+  <div class="table-container bg-white">
+    <table class="w-full border-collapse">
+      <thead>
+        <tr>
+          <th class="sticky left-0 bg-gray-100 z-10 w-12 text-center">S/N</th>
+          <th class="sticky left-12 bg-gray-100 z-10">Student Name</th>
+          <th>Bal Last Term</th>
+          <th>Current Fees</th>
+          <th class="bg-green-50">Total Owed</th>
+          <th>1st Pay</th>
+          <th>2nd Pay</th>
+          <th>3rd Pay</th>
+          <th>4th Pay</th>
+          <th class="print:hidden">Actions</th>
+        </tr>
+      </thead>
+      <tbody id="tbody" class="divide-y divide-gray-200">
+        </tbody>
+    </table>
+  </div>
+</div>
+</div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, getDocs, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  if (sessionStorage.getItem('bursaryAccess') !== 'true') window.location.href = 'bursary-login.html';
+
+  document.getElementById('load').onclick = async () => {
+    const className = document.getElementById('filterClass').value;
+    const tbody = document.getElementById('tbody');
+    tbody.innerHTML = '<tr><td colspan="9" class="text-center p-10">Loading...</td></tr>';
+
+    try {
+      const term = document.getElementById('filterTerm') ? document.getElementById('filterTerm').value : '1st Term';
+      const q = query(collection(db, "bursaryLedgers"), where("className", "==", className), where("term", "==", term));
+      const snap = await getDocs(q);
+      tbody.innerHTML = "";
+
+      if (snap.empty) {
+        tbody.innerHTML = '<tr><td colspan="9" class="text-center p-10">No records found for this class.</td></tr>';
+        return;
+      }
+
+      let sn = 1; // Initialize serial number
+      snap.forEach(d => {
+        const r = d.data();
+        const total = (Number(r.balLastTerm) || 0) + (Number(r.currentFees) || 0);
+        
+        tbody.innerHTML += `
+          <tr>
+            <td class="text-center text-gray-500 font-bold">${sn++}</td>
+            <td class="font-bold sticky left-12 bg-white z-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+              ${r.pupilName} <br><span class="text-xs font-normal text-purple-600">${r.regNo || ''}</span>
+            </td>
+            <td>${r.balLastTerm || 0}</td>
+            <td>${r.currentFees || 0}</td>
+            <td class="bg-gray-50 font-black">${total}</td>
+            <td>${r.p1Amt || '-'}<br><span class="text-[9px] text-gray-400">${r.p1Rec || ''} ${r.p1Date || ''}</span></td>
+            <td>${r.p2Amt || '-'}<br><span class="text-[9px] text-gray-400">${r.p2Rec || ''} ${r.p2Date || ''}</span></td>
+            <td>${r.p3Amt || '-'}<br><span class="text-[9px] text-gray-400">${r.p3Rec || ''} ${r.p3Date || ''}</span></td>
+            <td>${r.p4Amt || '-'}<br><span class="text-[9px] text-gray-400">${r.p4Rec || ''} ${r.p4Date || ''}</span></td>
+            <td class="print:hidden">
+              <button onclick="deleteRow('${d.id}')" class="text-red-600 font-bold">Delete</button>
+            </td>
+          </tr>
+        `;
+      });
+    } catch (err) {
+      alert(err.message);
+    }
+  };
+
+  window.deleteRow = async (id) => {
+    if (confirm("Delete this student's entire ledger record?")) {
+      await deleteDoc(doc(db, "bursaryLedgers", id));
+      document.getElementById('load').click();
+    }
+  };
+</script>
+</body>
+</html>

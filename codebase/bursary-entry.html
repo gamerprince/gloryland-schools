@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bursary Entry & Cash Analysis</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .section-title { @apply text-lg font-black mb-6 pb-2 border-b-2 uppercase tracking-wider; }
+    th, td { border: 1px solid #e2e8f0; padding: 10px; font-size: 12px; white-space: nowrap; }
+    th { @apply bg-gray-100 text-gray-700 font-bold uppercase; }
+    .table-container { overflow-x: auto; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+
+<nav class="bg-green-800 text-white p-4 flex justify-between items-center shadow-md">
+  <span class="font-black tracking-tight">BURSARY SYSTEM</span>
+  <div class="space-x-4">
+    <a href="bursary-ledger.html" class="text-sm hover:underline">View Class Ledgers</a>
+    <a href="portal.html" class="text-sm bg-green-700 px-3 py-1 rounded hover:bg-green-600 transition">Exit</a>
+  </div>
+</nav>
+
+<div class="max-w-7xl mx-auto px-4 mt-8 space-y-10">
+
+  <section id="part-a" class="bg-white p-8 rounded-2xl shadow-sm border border-blue-200">
+    <h2 class="section-title text-blue-800 border-blue-100">Part A: General Ledger Payment</h2>
+    
+    <div class="mb-8 p-6 bg-blue-50 rounded-xl border-2 border-blue-100">
+      <h3 class="text-sm font-black text-blue-900 uppercase mb-4 flex items-center gap-2">
+        <span class="bg-blue-600 text-white p-1 rounded-full text-[10px]">?</span> 
+        Complete Payment Section (Pending Installments)
+      </h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <select id="cp-class" class="p-3 border rounded-lg bg-white font-bold text-sm text-gray-700"></select>
+        <input id="cp-search" placeholder="Search pupil name..." class="p-3 border rounded-lg bg-white font-bold text-sm text-gray-700 outline-none focus:border-blue-500">
+        <button id="cp-load" class="bg-blue-700 text-white rounded-xl font-black p-3 hover:bg-blue-800 active:scale-95 transition shadow-md">
+          FIND PENDING
+        </button>
+      </div>
+      <div id="cp-results" class="space-y-3 max-h-80 overflow-y-auto pr-2">
+         <p class="text-xs text-gray-400 italic">Select a class and click find to see students with incomplete payments.</p>
+      </div>
+    </div>
+
+    <hr class="mb-8 border-dashed border-blue-200">
+
+    <input type="hidden" id="selected-ledger-id">
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Pupil Name</label>
+        <input id="a-name" type="text" class="w-full p-3 border rounded-lg bg-gray-50">
+        <div id="payment-status-hint" class="text-[10px] font-bold mt-1 text-blue-600 italic"></div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Class</label>
+        <select id="a-class" class="w-full p-3 border rounded-lg bg-gray-50">
+          <option>Daycare</option>
+          <option>Kindergarten 1 (KG1)</option>
+          <option>Kindergarten 2 (KG2)</option>
+          <option>Nursery 1</option><option>Nursery 2</option><option>Nursery 3</option>
+          <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+          <option>Basic 2</option><option>Basic 3</option>
+          <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+          <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Academic Term</label>
+        <select id="a-term" class="w-full p-3 border-2 border-blue-400 rounded-lg bg-blue-50 font-bold">
+          <option value="1st Term">1st Term</option>
+          <option value="2nd Term">2nd Term</option>
+          <option value="3rd Term">3rd Term</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Balance Brought Forward (Arrears)</label>
+        <input id="a-bal-last" type="number" placeholder="₦ 0.00" class="w-full p-3 border rounded-lg bg-yellow-50 font-bold">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Current Term Fees</label>
+        <input id="a-current-fees" type="number" placeholder="₦ 0.00" class="w-full p-3 border rounded-lg bg-blue-50 font-bold">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1 text-blue-800">Total Owed (Calculated)</label>
+        <div id="a-total-owed-display" class="w-full p-3 border-2 border-dashed border-blue-200 rounded-lg font-black text-blue-900 bg-white">₦ 0.00</div>
+        <div id="a-total-paid-container" class="mt-2 text-sm text-gray-700">
+          <div class="font-bold text-gray-600 uppercase text-xs">Total Paid So Far</div>
+          <div id="a-total-paid-display" class="font-black text-green-700">₦ 0.00</div>
+        </div>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Amount Paid Now (₦)</label>
+        <input id="a-amount" type="number" class="w-full p-3 border-2 border-green-300 rounded-lg font-black text-green-700 text-lg">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Payment Type</label>
+        <select id="a-pay-status" class="w-full p-3 border rounded-lg bg-gray-50 font-bold">
+          <option value="instalment">Instalment / Part-Payment</option>
+          <option value="full">Full Payment (Clears Balance)</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Receipt No</label>
+        <input id="a-receipt" type="text" class="w-full p-3 border rounded-lg bg-gray-50">
+      </div>
+
+      <div class="lg:col-span-1 md:col-span-2">
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date of This Payment</label>
+        <input id="a-date" type="date" class="w-full p-3 border rounded-lg bg-gray-50">
+      </div>
+
+      <div class="lg:col-span-2 md:col-span-3 bg-red-50 p-4 rounded-xl border-2 border-red-200 flex items-center justify-between">
+        <div>
+          <label class="block text-sm font-black text-red-600 uppercase">Remaining Balance Owed</label>
+          <p class="text-[10px] text-red-400 font-bold uppercase">Calculated automatically</p>
+        </div>
+        <input id="a-balance" type="number" placeholder="₦ 0.00" class="w-1/2 p-3 border-2 border-red-300 rounded-lg font-black text-red-700 text-xl">
+      </div>
+    </div>
+
+    <button id="btn-save-a" class="w-full bg-blue-700 text-white font-black py-4 mt-6 rounded-xl shadow-lg hover:bg-blue-800 active:scale-95 transition">
+      SAVE PAYMENT (PART A)
+    </button>
+    <div id="msg-a" class="text-center font-bold mt-3 text-sm"></div>
+  </section>
+
+  <!-- PART B: DAILY CASH ANALYSIS -->
+  <section id="part-b" class="bg-white p-8 rounded-2xl shadow-sm border border-green-200">
+    <h2 class="section-title text-green-800 border-green-100">Part B: Daily Cash Analysis Entry</h2>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Student Name</label>
+        <input id="b-name" type="text" placeholder="Student name" autocomplete="off" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-green-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Class</label>
+        <select id="b-class" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-green-500 outline-none">
+          <option value="">-- Select Class --</option>
+          <option>Daycare</option>
+          <option>Kindergarten 1 (KG1)</option>
+          <option>Kindergarten 2 (KG2)</option>
+          <option>Nursery 1</option><option>Nursery 2</option><option>Nursery 3</option>
+          <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+          <option>Basic 2</option><option>Basic 3</option>
+          <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+          <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+        <input id="b-date" type="date" class="w-full p-3 border rounded-lg bg-gray-50">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">&nbsp;</label>
+        <button id="btn-4th-child" type="button" class="w-full p-3 border-2 border-purple-300 rounded-lg bg-white text-purple-700 font-black uppercase hover:bg-purple-50 transition active:scale-95">
+          4th Child
+        </button>
+      </div>
+    </div>
+
+    <div class="bg-gray-50 p-6 rounded-xl border border-gray-200 mb-6">
+      <label class="block text-sm font-black text-gray-700 uppercase mb-4">Select Fees Paid & Enter Amounts</label>
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-y-4 gap-x-6" id="fee-grid"></div>
+    </div>
+
+    <button id="btn-save-b" class="w-full bg-green-700 text-white font-black py-4 mt-6 rounded-xl shadow-lg hover:bg-green-800 active:scale-95 transition">
+      SAVE TO CASH ANALYSIS (PART B)
+    </button>
+    <div id="msg-b" class="text-center font-bold mt-3 text-sm"></div>
+  </section>
+
+</div>
+
+  <div class="mt-10 bg-white p-6 rounded-xl shadow border">
+    <h2 class="section-title">Tabular Cash Analysis Ledger</h2>
+    
+    <!-- Search & Filter Controls -->
+    <div class="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
+      <h3 class="text-sm font-black text-gray-700 uppercase mb-4">Search & Filter</h3>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Filter by Class</label>
+          <select id="cash-filter-class" class="w-full p-3 border rounded-lg bg-white font-bold text-sm text-gray-700">
+            <option value="">-- All Classes --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Search by Student Name</label>
+          <input id="cash-filter-name" type="text" placeholder="Type student name..." autocomplete="off" class="w-full p-3 border rounded-lg bg-white font-bold text-sm text-gray-700 outline-none focus:border-green-500">
+        </div>
+      </div>
+      <div class="flex gap-2 mt-3">
+        <button id="cash-filter-reset" class="px-4 py-2 bg-gray-400 text-white rounded-lg font-bold text-sm hover:bg-gray-500 transition">
+          Clear Filters
+        </button>
+        <button id="verify-class-btn" class="px-4 py-2 bg-orange-600 text-white rounded-lg font-bold text-sm hover:bg-orange-700 transition" style="display: none;">
+          ✓ Verify Class
+        </button>
+      </div>
+    </div>
+
+    <div class="table-container">
+      <table class="w-full text-left">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th class="sticky left-0 bg-gray-100">Student Name</th>
+            <th>4th Child</th>
+            <th>Class</th>
+            <th>Dev</th><th>Exam</th><th>Med</th><th>Maint</th><th>School</th>
+            <th>Lesson</th><th>PTA</th><th>Book</th><th>Uniform</th>
+            <th>Sports</th><th>Cardigan</th><th>Phonics</th><th>CBT</th>
+            <th>Robotics</th><th>Excursion</th>
+            <th class="bg-blue-100">Total</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody id="cash-tbody">
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Action Menu Modal -->
+  <div id="action-menu-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md">
+      <h3 id="action-menu-title" class="text-lg font-black text-gray-800 mb-6">Actions for Student</h3>
+      <div class="flex flex-col gap-3">
+        <button id="action-verify-btn" class="w-full px-4 py-3 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition">
+          ✓ Verify Record
+        </button>
+        <button id="action-delete-btn" class="w-full px-4 py-3 bg-red-600 text-white rounded-lg font-bold hover:bg-red-700 transition">
+          🗑 Delete Record
+        </button>
+        <button id="action-back-btn" class="w-full px-4 py-3 bg-gray-400 text-white rounded-lg font-bold hover:bg-gray-500 transition">
+          ← Back
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Passcode Modal -->
+  <div id="passcode-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-xl shadow-2xl max-w-md">
+      <h3 class="text-lg font-black text-gray-800 mb-4">Enter Passcode</h3>
+      <p id="modal-message" class="text-sm text-gray-600 mb-4">Required to verify this record</p>
+      <input id="passcode-input" type="password" placeholder="Enter passcode..." class="w-full p-3 border rounded-lg mb-4 focus:border-green-500 outline-none" />
+      <div class="flex gap-2">
+        <button id="passcode-cancel" class="flex-1 px-4 py-2 bg-gray-400 text-white rounded-lg font-bold hover:bg-gray-500 transition">
+          Cancel
+        </button>
+        <button id="passcode-submit" class="flex-1 px-4 py-2 bg-green-600 text-white rounded-lg font-bold hover:bg-green-700 transition">
+          Submit
+        </button>
+      </div>
+    </div>
+  </div>
+
+<script type="module" src="./bursary-entry.js"></script>
+</body>
+</html>
+

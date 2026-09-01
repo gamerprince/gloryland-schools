@@ -1,0 +1,70 @@
+{
+  "indexes": [
+    {
+      "collectionGroup": "compiledResults",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "studentNameLower",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "className",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "term",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "session",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "compiledResults",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "className",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "subject",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "term",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "session",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "compiledResults",
+      "queryScope": "Collection",
+      "fields": [
+        {
+          "fieldPath": "className",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "term",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "session",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "published",
+          "order": "ASCENDING"
+        }
+      ]
+    }
+  ]
+}

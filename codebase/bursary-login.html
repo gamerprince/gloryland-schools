@@ -1,0 +1,38 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bursary Login</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 flex items-center justify-center min-h-screen p-4">
+  <div class="bg-white p-10 rounded-3xl shadow-2xl w-full max-w-md border border-green-100 text-center">
+    <h1 class="text-3xl font-black text-green-800 mb-2">BURSARY</h1>
+    <p class="text-base text-gray-500 mb-8 font-medium">Enter Access Password</p>
+    
+    <input id="pass" type="password" 
+      class="w-full p-5 border-2 border-gray-200 rounded-2xl text-center text-3xl mb-6 focus:border-green-500 outline-none transition-all" 
+      placeholder="••••">
+    
+    <button id="login" 
+      class="w-full bg-green-600 text-white font-black text-xl py-5 rounded-2xl hover:bg-green-700 active:scale-95 transition-transform shadow-lg">
+      ENTER PORTAL
+    </button>
+    <p id="msg" class="text-red-500 text-sm mt-4 font-bold"></p>
+  </div>
+
+  <script>
+    document.getElementById('login').onclick = () => {
+      const pass = document.getElementById('pass').value;
+      // You can change this password to whatever you want
+      if (pass === 'glory2026') { 
+        sessionStorage.setItem('bursaryAccess', 'true');
+        window.location.href = 'bursary-dashboard.html';
+      } else {
+        document.getElementById('msg').textContent = "❌ Incorrect Password";
+      }
+    };
+  </script>
+</body>
+</html>

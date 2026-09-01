@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Class Broadsheet</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-6">
+
+    <nav class="bg-gray-900 text-white p-3 flex gap-4">
+  <a href="admin.html">Dashboard</a>
+  <a href="admin-results.html">Publish & Rank</a>
+  <a href="admin-broadsheet.html">Broadsheet</a>
+  <button id="logoutBtn" class="ml-auto">Logout</button>
+</nav>
+
+
+<div class="max-w-6xl mx-auto bg-white p-6 rounded shadow">
+  <h2 class="text-2xl font-bold mb-4 text-center">Class Broadsheet</h2>
+
+  <!-- Filters -->
+  <div class="grid grid-cols-4 gap-3 mb-4">
+    <select id="className" class="border p-2 rounded">
+      <option>Basic 1 Onyx</option>
+      <option>Basic 1 Gold</option>
+      <option>Basic 2</option>
+      <option>Basic 3</option>
+      <option>Basic 4</option>
+      <option>Basic 5</option>
+      <option>Basic 6</option>
+      <option>JSS 1</option>
+      <option>JSS 2</option>
+      <option>JSS 3</option>
+    </select>
+
+    <select id="term" class="border p-2 rounded">
+      <option value="1">1st Term</option>
+      <option value="2">2nd Term</option>
+      <option value="3">3rd Term</option>
+    </select>
+
+    <input id="session" value="2025/2026" class="border p-2 rounded">
+
+    <button id="load"
+      class="bg-blue-600 text-white rounded px-4">
+      Load Broadsheet
+    </button>
+  </div>
+
+  <!-- Table -->
+  <div id="output"></div>
+
+  <button id="print"
+    class="hidden mt-4 bg-green-600 text-white px-4 py-2 rounded">
+    Print / Download
+  </button>
+</div>
+<script type="module" src="./admin-broadsheet.js"></script>
+
+
+</body>
+</html>

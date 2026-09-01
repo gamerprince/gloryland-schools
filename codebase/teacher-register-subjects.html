@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Register Subjects — Teacher Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+        <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="hover:text-indigo-300 transition">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="border-b-2 border-white pb-1">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+    <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block hover:text-indigo-300">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block text-indigo-400">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+<div class="max-w-3xl mx-auto px-6 py-10">
+  <div class="bg-white p-6 rounded shadow">
+    <label class="block mb-2 font-semibold">Step 1: Select Class</label>
+    <select id="className" class="w-full p-2 border rounded mb-6 bg-white">
+      <option value="">-- Choose Class --</option>
+      <option>Basic 1 Onyx</option>
+      <option>Basic 1 Gold</option>
+      <option>Basic 2</option>
+      <option>Basic 3</option>
+      <option>Basic 4</option>
+      <option>Basic 5</option>
+      <option>Basic 6</option>
+      <option>JSS 1</option>
+      <option>JSS 2</option>
+      <option>JSS 3</option>
+    </select>
+
+    <label class="block mb-2 font-semibold">Step 2: Pick Subjects you teach for this class</label>
+    <div id="subjectList" class="grid grid-cols-2 gap-2 mb-6">
+      </div>
+
+    <button id="btn-save" class="w-full py-3 bg-indigo-600 text-white rounded font-bold shadow hover:bg-indigo-700">
+      Save Subject Selection
+    </button>
+  </div>
+
+  <div class="mt-8 bg-white p-6 rounded shadow">
+    <h3 class="font-bold border-b pb-2 mb-4">My Registered Subjects</h3>
+    <div id="registeredList" class="space-y-2 text-sm"></div>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const $ = id => document.getElementById(id);
+let teacherId = null;
+
+// The Master List of Subjects (Matches Admin logic)
+const masterSubjects = [
+  "Mathematics", "English Language", "Basic Science Technology", "Social Studies", 
+  "Igbo", "Agricultural Science", "Home Economics", "ICT", 
+  "P.H.E", "Cultural and Creative Arts", "French", "History", "C.R.S", "Business studies", "Phonics", "Civic Education", "Geography","Commerce", "Physics", "Economics", "Financial Accounting", "Further Mathematics","Data Processing", "Literature-In-English","National Values","Science practical", "Vocational", "Verbal/quantitative","intermediate science",
+];
+
+onAuthStateChanged(auth, (user) => {
+  if (user) { 
+    teacherId = user.uid; 
+    loadMyRegisteredSubjects();
+  } else { 
+    window.location.href = 'teacher-login.html'; 
+  }
+});
+
+// Populate the checkbox list
+const listDiv = $("subjectList");
+masterSubjects.forEach(sub => {
+  const label = document.createElement("label");
+  label.className = "flex items-center space-x-2 p-2 border rounded hover:bg-gray-50 cursor-pointer";
+  label.innerHTML = `<input type="checkbox" value="${sub}" class="sub-check"> <span>${sub}</span>`;
+  listDiv.appendChild(label);
+});
+
+$("btn-save").onclick = async () => {
+  const className = $("className").value;
+  const selected = Array.from(document.querySelectorAll(".sub-check:checked")).map(el => el.value);
+
+  if (!className || selected.length === 0) {
+    alert("Please select a class and at least one subject.");
+    return;
+  }
+
+  try {
+    // Save to a collection called 'teacher_assignments'
+    // Document ID is a combination of teacherId and Class to prevent duplicates
+    await setDoc(doc(db, "teacher_assignments", `${teacherId}_${className.replace(/\s+/g, '')}`), {
+      teacherId,
+      className,
+      subjects: selected
+    });
+    alert("Subjects registered successfully!");
+    loadMyRegisteredSubjects();
+  } catch (err) {
+    alert("Error: " + err.message);
+  }
+};
+
+async function loadMyRegisteredSubjects() {
+  const q = query(collection(db, "teacher_assignments"), where("teacherId", "==", teacherId));
+  const snap = await getDocs(q);
+  const container = $("registeredList");
+  container.innerHTML = "";
+
+  snap.forEach(d => {
+    const data = d.data();
+    const div = document.createElement("div");
+    div.className = "p-3 bg-gray-50 border rounded flex justify-between items-center";
+    div.innerHTML = `
+      <div>
+        <span class="font-bold text-indigo-700">${data.className}:</span> 
+        <span class="text-gray-600">${data.subjects.join(", ")}</span>
+      </div>
+      <button onclick="deleteAssignment('${d.id}')" class="text-red-500 hover:underline">Remove</button>
+    `;
+    container.appendChild(div);
+  });
+}
+
+window.deleteAssignment = async (id) => {
+  if(confirm("Remove this registration?")) {
+    await deleteDoc(doc(db, "teacher_assignments", id));
+    loadMyRegisteredSubjects();
+  }
+};
+
+// navigation helpers
+const mobileBtn = $("mobile-menu-btn");
+const mobileMenu = $("mobile-menu");
+if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");
+if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+</script>
+</body>
+</html>

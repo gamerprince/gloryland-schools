@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Bursary Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 flex flex-col min-h-screen">
+  
+  <nav class="bg-green-800 text-white p-4 flex justify-between items-center shadow-md">
+    <span class="font-black text-xl tracking-tight">BURSARY<span class="text-green-300">PORTAL</span></span>
+    <div class="space-x-4">
+      <a href="portal.html" class="text-sm font-bold text-red-200 hover:text-red-100" onclick="sessionStorage.removeItem('bursaryAccess')">Lock / Exit</a>
+    </div>
+  </nav>
+
+  <div class="flex-grow flex items-center justify-center p-6 lg:p-12">
+    <div class="w-full max-w-7xl">
+      <h1 class="text-3xl font-black text-gray-800 mb-10 text-center uppercase tracking-widest">Bursary Dashboard</h1>
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8">
+        
+        <a href="bursary-entry.html" class="bg-white p-8 rounded-3xl shadow-lg border border-green-100 hover:shadow-2xl hover:scale-105 transition-all text-center flex flex-col items-center justify-center group">
+          <div class="w-16 h-16 bg-green-100 text-green-700 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-green-600 group-hover:text-white transition-colors">
+            📝
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Daily Entry</h2>
+          <p class="text-sm text-gray-500 font-medium">Record new payments and generate receipts.</p>
+        </a>
+
+        <a href="bursary-ledger.html" class="bg-white p-8 rounded-3xl shadow-lg border border-green-100 hover:shadow-2xl hover:scale-105 transition-all text-center flex flex-col items-center justify-center group">
+          <div class="w-16 h-16 bg-blue-100 text-blue-700 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+            📊
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Class Ledgers</h2>
+          <p class="text-sm text-gray-500 font-medium">View balances, payment history, and class records.</p>
+        </a>
+
+        <a href="bursary-admissions.html" class="bg-white p-8 rounded-3xl shadow-lg border border-green-100 hover:shadow-2xl hover:scale-105 transition-all text-center flex flex-col items-center justify-center group">
+          <div class="w-16 h-16 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-purple-600 group-hover:text-white transition-colors">
+            🎓
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Admissions</h2>
+          <p class="text-sm text-gray-500 font-medium">Register new students and generate unique Reg Numbers.</p>
+        </a>
+
+        <a href="bursary-setup.html" class="bg-white p-8 rounded-3xl shadow-lg border border-indigo-100 hover:shadow-2xl hover:scale-105 transition-all text-center flex flex-col items-center justify-center group">
+          <div class="w-16 h-16 bg-indigo-100 text-indigo-700 rounded-2xl flex items-center justify-center text-3xl mb-4 group-hover:bg-indigo-600 group-hover:text-white transition-colors">
+            ⚙️
+          </div>
+          <h2 class="text-xl font-bold text-gray-800 mb-2">Input Entry Dashboard</h2>
+          <p class="text-sm text-gray-500 font-medium">Automate and edit the default fee structures per class.</p>
+        </a>
+
+        </div>
+    </div>
+  </div>
+
+  <script>
+    // Security check: Kick them to login if they bypassed the password
+    if (sessionStorage.getItem('bursaryAccess') !== 'true') {
+      window.location.href = 'bursary-login.html';
+    }
+  </script>
+</body>
+</html>

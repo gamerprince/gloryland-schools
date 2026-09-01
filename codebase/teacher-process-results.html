@@ -1,0 +1,109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Process Results — Teacher Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+        <a href="teacher-process-results.html" class="border-b-2 border-white pb-1">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="hover:text-indigo-300 transition">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+    <a href="teacher-process-results.html" class="block text-indigo-400">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block hover:text-indigo-300">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+<div class="max-w-5xl mx-auto px-6 py-10">
+  <div class="bg-white p-6 rounded-xl shadow-sm border mb-8">
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 items-end">
+      <div>
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Class</label>
+        <select id="className" class="w-full p-2 border rounded bg-white">
+          <option>Basic 1 Onyx</option>
+          <option>Basic 1 Gold</option>
+          <option>Basic 2</option>
+          <option>Basic 3</option>
+          <option>Basic 4</option>
+          <option>Basic 5</option>
+          <option>Basic 6</option>
+          <option>JSS 1</option>
+          <option>JSS 2</option>
+          <option>JSS 3</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Term</label>
+        <select id="term" class="w-full p-2 border rounded bg-white">
+          <option value="1">1st Term</option>
+          <option value="2">2nd Term</option>
+          <option value="3">3rd Term</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Session</label>
+        <input id="session" type="text" value="2025/2026" class="w-full p-2 border rounded" />
+      </div>
+      <button id="btn-load" class="bg-indigo-600 text-white px-6 py-2 rounded font-bold hover:bg-indigo-700 transition">
+        Load Students
+      </button>
+    </div>
+  </div>
+
+  <div id="status-msg" class="text-center py-4 hidden text-gray-500 italic">Searching records...</div>
+  
+  <div class="bg-white rounded-xl shadow-sm border overflow-x-auto">
+    <table class="w-full text-left border-collapse min-w-full">
+      <thead class="bg-gray-100 border-b sticky top-0">
+        <tr>
+          <th class="p-2 md:p-4 text-xs md:text-sm font-bold text-gray-600">Student Name</th>
+          <th class="p-2 md:p-4 text-xs md:text-sm font-bold text-gray-600 text-center">Subjects</th>
+          <th class="p-2 md:p-4 text-xs md:text-sm font-bold text-gray-600 text-center">Fee Status</th>
+          <th class="p-2 md:p-4 text-xs md:text-sm font-bold text-gray-600 text-center">Manage</th>
+          <th class="p-2 md:p-4 text-xs md:text-sm font-bold text-gray-600 text-center">Report</th>
+        </tr>
+      </thead>
+      <tbody id="student-list" class="divide-y">
+        <tr>
+          <td colspan="4" class="p-10 text-center text-gray-400">Select filters and click Load Students</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<script type="module" src="teacher-process-results.js"></script>
+
+</body>
+</html>

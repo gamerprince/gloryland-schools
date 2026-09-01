@@ -1,0 +1,166 @@
+<!-- teacher-view-attempts.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>View Attempts — Teacher Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="hover:text-indigo-300 transition">Enter Result</a>
+        <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="border-b-2 border-white pb-1">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block hover:text-indigo-300">Enter Result</a>
+    <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block text-indigo-400">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+  <div class="max-w-5xl mx-auto px-6 py-8">
+    <div class="mb-4">
+      <button id="exportCSV" class="px-3 py-1 border rounded">Export CSV</button>
+    </div>
+    <div id="attemptsList" class="space-y-2"></div>
+  </div>
+
+<script type="module">
+import { auth, db } from './firebase-config.js';
+import { 
+  collection, query, where, getDocs, doc, getDoc 
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const $ = id => document.getElementById(id);
+const params = new URLSearchParams(window.location.search);
+const testId = params.get('testId');
+
+let csvRows = [];
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = 'student-login.html';
+    return;
+  }
+  if (!testId) {
+    alert("No Test ID provided.");
+    return;
+  }
+  loadAttempts();
+});
+
+async function loadAttempts() {
+  const list = $('attemptsList');
+  list.innerHTML = '<div class="p-10 text-center text-gray-500">⏳ Loading student attempts...</div>';
+  
+  // Reset CSV Header
+  csvRows = [['Student Email', 'Score %', 'Correct', 'Total', 'Date']];
+
+  try {
+    const q = query(
+      collection(db, "attempts"),
+      where("testId", "==", testId)
+    );
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      list.innerHTML = `
+        <div class="p-8 bg-white rounded-xl shadow-sm text-center border-2 border-dashed border-gray-200">
+          <p class="text-gray-500 font-medium">No students have submitted this exam yet.</p>
+        </div>`;
+      return;
+    }
+
+    list.innerHTML = '';
+    snap.forEach(d => {
+      const a = d.data();
+      const dateObj = a.submittedAt ? a.submittedAt.toDate() : new Date();
+      const formattedDate = dateObj.toLocaleString();
+
+      const div = document.createElement('div');
+      div.className = 'p-4 bg-white rounded-lg shadow-sm flex justify-between items-center mb-3 border-l-4 border-blue-600 hover:shadow-md transition-shadow';
+      
+      div.innerHTML = `
+        <div class="flex-1">
+          <div class="font-bold text-gray-800 text-lg">${a.studentEmail || 'Anonymous Student'}</div>
+          <div class="text-xs text-gray-400 font-medium uppercase tracking-wider">${formattedDate}</div>
+        </div>
+        <div class="text-right">
+          <div class="text-3xl font-black text-blue-700">${a.score || 0}%</div>
+          <div class="text-sm font-bold text-green-600 bg-green-50 px-2 py-1 rounded-md inline-block mt-1">
+            ${a.correct || 0} / ${a.total || 0} Correct
+          </div>
+        </div>
+      `;
+      list.appendChild(div);
+
+      // Save for Export
+      csvRows.push([
+        a.studentEmail || 'Unknown',
+        a.score || 0,
+        a.correct || 0,
+        a.total || 0,
+        dateObj.toISOString()
+      ]);
+    });
+  } catch (err) {
+    console.error(err);
+    list.innerHTML = `<div class="p-4 bg-red-50 text-red-600 rounded">Error: ${err.message}</div>`;
+  }
+}
+
+/* ===============================
+    EXPORT TO CSV FUNCTION
+================================ */
+$('exportCSV').onclick = () => {
+  if (csvRows.length <= 1) {
+    alert("No data available to export.");
+    return;
+  }
+
+  const csvContent = csvRows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+  const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.setAttribute('href', url);
+  link.setAttribute('download', `results_${testId}.csv`);
+  link.click();
+};
+
+// mobile nav handlers
+const mobileBtn = $("mobile-menu-btn");
+const mobileMenu = $("mobile-menu");
+if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");
+if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(()=> window.location.href="portal.html");
+</script>
+</body>
+</html>

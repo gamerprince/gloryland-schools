@@ -1,0 +1,840 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admissions — Bursary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    th, td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+    th { background-color: #f9fafb; font-weight: 800; text-transform: uppercase; color: #4b5563; text-align: left; }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+<nav class="bg-green-800 text-white p-4 flex justify-between shadow-md">
+  <span class="font-black tracking-tight">BURSARY: ADMISSIONS REGISTRY</span>
+  <div class="space-x-4">
+    <a href="bursary-dashboard.html" class="underline text-sm hover:text-green-200 font-bold">Dashboard</a>
+  </div>
+
+  
+</nav>
+
+<!-- Complete Payment helper UI -->
+<section class="bg-white p-8 rounded-2xl shadow-sm border border-indigo-200 mt-8">
+  <h2 class="text-lg font-black text-indigo-800 border-b pb-2 mb-6 uppercase">Complete Payment Section</h2>
+  <div class="grid md:grid-cols-3 gap-4">
+    <select id="cp-class" class="p-3 border rounded-lg"></select>
+    <input id="cp-search" placeholder="Search pupil name" class="p-3 border rounded-lg">
+    <button id="cp-load" class="bg-indigo-700 text-white rounded-xl font-black p-3">LOAD INCOMPLETE PAYMENTS</button>
+  </div>
+  <div id="cp-results" class="mt-6 space-y-4"></div>
+</section>
+
+<div class="max-w-6xl mx-auto px-4 mt-8">
+  
+  <div class="flex gap-2 mb-6 border-b border-gray-200">
+    <button id="tab-register" class="py-3 px-6 font-black text-purple-700 border-b-4 border-purple-700 transition-colors">
+      ➕ Register New Student
+    </button>
+    <button id="tab-manage" class="py-3 px-6 font-bold text-gray-400 border-b-4 border-transparent hover:text-gray-700 transition-colors">
+      📂 Manage Registry
+    </button>
+  </div>
+
+  <div id="section-register" class="bg-white p-8 rounded-2xl shadow-sm border border-purple-100 max-w-3xl">
+    <h2 class="text-2xl font-black mb-2 text-gray-800">Register New Student</h2>
+    <p class="text-sm text-gray-500 mb-8">Generates a permanent, unique Registration Number and Ledger profile.</p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div class="md:col-span-2 relative">
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Student Full Name</label>
+        <input id="fullName" type="text" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 focus:bg-white outline-none transition-colors" placeholder="Surname First">
+      </div>
+      
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Class Admitted To</label>
+        <select id="className" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors">
+          <option value="">-- Select Class --</option>
+          <option>Daycare</option>
+          <option>Kindergarten 1 (KG1)</option>
+          <option>Kindergarten 2 (KG2)</option>
+          <option>Nursery 1</option><option>Nursery 2</option><option>Nursery 3</option>
+          <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+          <option>Basic 2</option><option>Basic 3</option>
+          <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+          <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Gender</label>
+        <select id="gender" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors">
+          <option value="">-- Select --</option>
+          <option>Male</option>
+          <option>Female</option>
+        </select>
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Date of Birth (DD/MM/YYYY)</label>
+        <div class="grid grid-cols-3 gap-2">
+          <input id="dobDay" type="number" min="1" max="31" placeholder="DD" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors text-center font-bold">
+          <input id="dobMonth" type="number" min="1" max="12" placeholder="MM" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors text-center font-bold">
+          <input id="dobYear" type="number" min="1900" max="2026" placeholder="YYYY" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors text-center font-bold">
+        </div>
+      </div>
+
+      <div class="md:col-span-2">
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Parent / Guardian Address</label>
+        <input id="parentAddress" type="text" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors" placeholder="Street address, city, postal code">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Academic Session</label>
+        <select id="session" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors">
+          <option>2025/2026</option>
+          <option>2026/2027</option>
+          <option>2027/2028</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Parent / Guardian Name</label>
+        <input id="parentName" type="text" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors">
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Parent Phone Number</label>
+        <input id="parentPhone" type="tel" class="w-full p-3 border-2 border-gray-200 rounded-xl bg-gray-50 focus:border-purple-500 outline-none transition-colors">
+      </div>
+    </div>
+
+    <button id="registerBtn" class="w-full bg-purple-600 hover:bg-purple-700 text-white font-black py-4 mt-8 rounded-xl shadow-lg transition-transform active:scale-95 tracking-wider">
+      GENERATE REG NO. & REGISTER
+    </button>
+    
+    <div id="msg" class="mt-6"></div>
+  </div>
+
+  <div id="section-manage" class="hidden bg-white p-8 rounded-2xl shadow-sm border border-gray-200">
+    <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
+      <div>
+        <h2 class="text-xl font-black text-gray-800">Registry Database</h2>
+        <p class="text-sm text-gray-500">View, edit, or delete admitted students by class.</p>
+      </div>
+      <div class="flex gap-2 w-full md:w-auto">
+        <select id="filterSession" class="w-full md:w-40 p-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 outline-none focus:border-purple-500">
+          <option value="2025/2026">2025/2026</option>
+          <option value="2026/2027">2026/2027</option>
+        </select>
+        <select id="filterClass" class="w-full md:w-48 p-3 border-2 border-gray-200 rounded-xl font-bold text-gray-700 outline-none focus:border-purple-500">
+          <option value="">-- Select Class --</option>
+          <option>Daycare</option>
+          <option>Kindergarten 1 (KG1)</option>
+          <option>Kindergarten 2 (KG2)</option>
+          <option>Nursery 1</option><option>Nursery 2</option><option>Nursery 3</option>
+          <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+          <option>Basic 2</option><option>Basic 3</option>
+          <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+          <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+        </select>
+        <button id="btn-load-registry" class="bg-gray-800 text-white px-6 py-3 rounded-xl font-bold shadow hover:bg-gray-700 transition">Load</button>
+      </div>
+    </div>
+
+    <!-- Total Children Count -->
+    <div id="registry-summary" class="mb-6 hidden">
+      <div class="bg-gradient-to-r from-purple-50 to-blue-50 border-2 border-purple-200 rounded-xl p-4 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Children in Class</p>
+          <p id="total-children-count" class="text-3xl font-black text-purple-700 mt-1">0</p>
+        </div>
+        <div class="text-5xl text-purple-100 opacity-50">👶</div>
+      </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-xl border border-gray-100">
+      <table class="w-full text-left">
+        <thead>
+          <tr>
+            <th>Reg No</th>
+            <th>Student Name</th>
+            <th>Gender</th>
+            <th>Date of Birth</th>
+            <th>Parent Name</th>
+            <th>Address</th>
+            <th>Phone Number</th>
+            <th class="text-center">Actions</th>
+          </tr>
+        </thead>
+        <tbody id="registry-tbody">
+          <tr><td colspan="6" class="text-center p-10 text-gray-400">Select a class to view registered students.</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+</div>
+
+<div id="edit-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+  <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+    <h3 class="text-xl font-black text-gray-800 mb-4 border-b pb-2">Edit Student Profile</h3>
+    <div class="space-y-4">
+      <input type="hidden" id="edit-regNo">
+      
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Student Name</label>
+        <input id="edit-name" type="text" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Gender</label>
+        <select id="edit-gender" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none">
+          <option>Male</option><option>Female</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Date of Birth (DD/MM/YYYY)</label>
+        <div class="grid grid-cols-3 gap-2">
+          <input id="edit-dobDay" type="number" min="1" max="31" placeholder="DD" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none text-center font-bold">
+          <input id="edit-dobMonth" type="number" min="1" max="12" placeholder="MM" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none text-center font-bold">
+          <input id="edit-dobYear" type="number" min="1900" max="2026" placeholder="YYYY" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none text-center font-bold">
+        </div>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Name</label>
+        <input id="edit-parent" type="text" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Address</label>
+        <input id="edit-parentAddress" type="text" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Parent Phone</label>
+        <input id="edit-phone" type="text" class="w-full p-3 border rounded-lg bg-gray-50 focus:border-purple-500 outline-none">
+      </div>
+      
+      <div class="flex gap-3 pt-4">
+        <button id="btn-save-edit" class="flex-1 bg-purple-600 text-white font-bold py-3 rounded-xl hover:bg-purple-700">Save Changes</button>
+        <button onclick="document.getElementById('edit-modal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl hover:bg-gray-300">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+      <!-- Promotion Modal -->
+      <div id="promote-modal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-2xl w-full max-w-md shadow-2xl">
+          <h3 class="text-xl font-black text-gray-800 mb-2">Promote Student</h3>
+          <p id="promote-student-info" class="text-sm text-gray-500 mb-6"></p>
+    
+          <input type="hidden" id="promote-regNo">
+          <label class="block text-xs font-bold text-gray-500 uppercase mb-1">New Class</label>
+          <select id="promote-newClass" class="w-full p-3 border rounded-lg bg-gray-50 mb-4 focus:border-green-500 outline-none">
+             <option>Basic 1 Gold</option><option>Basic 2</option>
+          </select>
+
+          <div class="flex gap-3">
+            <button id="btn-confirm-promotion" class="flex-1 bg-green-600 text-white font-bold py-3 rounded-xl hover:bg-green-700">Update Class</button>
+            <button onclick="document.getElementById('promote-modal').classList.add('hidden')" class="flex-1 bg-gray-200 text-gray-700 font-bold py-3 rounded-xl">Cancel</button>
+          </div>
+        </div>
+      </div>
+</div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, query, where, getDocs, doc, setDoc, getDoc, updateDoc, deleteDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  if (sessionStorage.getItem('bursaryAccess') !== 'true') window.location.href = 'bursary-login.html';
+  const $ = id => document.getElementById(id);
+
+  /* --- TAB SWITCHING --- */
+  $("tab-register").onclick = () => {
+    $("section-register").classList.remove("hidden");
+    $("section-manage").classList.add("hidden");
+    $("tab-register").className = "py-3 px-6 font-black text-purple-700 border-b-4 border-purple-700 transition-colors";
+    $("tab-manage").className = "py-3 px-6 font-bold text-gray-400 border-b-4 border-transparent hover:text-gray-700 transition-colors";
+  };
+  
+  $("tab-manage").onclick = () => {
+    $("section-manage").classList.remove("hidden");
+    $("section-register").classList.add("hidden");
+    $("tab-manage").className = "py-3 px-6 font-black text-purple-700 border-b-4 border-purple-700 transition-colors";
+    $("tab-register").className = "py-3 px-6 font-bold text-gray-400 border-b-4 border-transparent hover:text-gray-700 transition-colors";
+  };
+
+  /* --- TITLE CASE FORMATTER --- */
+  function formatStudentName(name) {
+    return name.trim().split(/\s+/).map(word => {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  }
+
+  /* --- PREFIX GENERATOR --- */
+  function getClassPrefix(className) {
+    const lower = className.toLowerCase();
+    if (lower.includes('daycare') || lower.includes('nursery') || lower.includes('kg') || lower.includes('kindergarten')) return 'N';
+    if (lower.includes('basic')) return 'P';
+    if (lower.includes('jss')) return 'J';
+    return 'X'; 
+  }
+
+  const generateRandom4 = () => Math.floor(1000 + Math.random() * 9000);
+
+  /* --- REGISTER STUDENT LOGIC --- */
+  $('registerBtn').onclick = async () => {
+    // FORMAT THE NAME INSTANTLY
+    const rawName = $('fullName').value;
+    if (rawName) $('fullName').value = formatStudentName(rawName);
+    
+    const fullName = $('fullName').value;
+    const className = $('className').value;
+    const session = $('session') ? $('session').value : '';
+    const gender = $('gender').value;
+    const dobDay = $('dobDay').value.padStart(2, '0');
+    const dobMonth = $('dobMonth').value.padStart(2, '0');
+    const dobYear = $('dobYear').value;
+    const dateOfBirth = dobDay && dobMonth && dobYear ? `${dobDay}/${dobMonth}/${dobYear}` : '';
+    const parentName = formatStudentName($('parentName').value || '');
+    const parentAddress = $('parentAddress').value.trim();
+    const parentPhone = $('parentPhone').value.trim();
+    const btn = $('registerBtn');
+    const msg = $('msg');
+
+    if (!fullName || !className) return alert("Student Full Name and Class are required!");
+
+    btn.disabled = true;
+    btn.textContent = "CHECKING REGISTRY...";
+
+    try {
+      // --- NEW DUPLICATE CHECK START ---
+      // We check if this name already exists in this specific class
+      const qDuplicate = query(
+        collection(db, "students_registry"), 
+        where("fullName", "==", fullName), 
+        where("className", "==", className)
+      );
+      const duplicateSnap = await getDocs(qDuplicate);
+
+      if (!duplicateSnap.empty) {
+        msg.innerHTML = `
+          <div class="bg-red-50 border-2 border-red-200 p-4 rounded-xl text-center">
+            <p class="text-red-700 font-bold">❌ Duplicate Registration Prevented</p>
+            <p class="text-xs text-red-600">${fullName} is already registered in ${className}.</p>
+          </div>
+        `;
+        btn.disabled = false;
+        btn.textContent = "GENERATE REG NO. & REGISTER";
+        return; // Stop the process here
+      }
+      // --- NEW DUPLICATE CHECK END ---
+
+      btn.textContent = "REGISTERING...";
+      const prefix = getClassPrefix(className);
+      const year = new Date().getFullYear();
+      let isUnique = false;
+      let newRegNo = "";
+
+      while (!isUnique) {
+        newRegNo = `${prefix}-${year}-${generateRandom4()}`;
+        const checkDoc = await getDoc(doc(db, "students_registry", newRegNo));
+        if (!checkDoc.exists()) isUnique = true; 
+      }
+
+      const studentData = {
+        regNo: newRegNo, fullName, className, session, gender, dateOfBirth, parentName, parentAddress, parentPhone,
+        registeredAt: serverTimestamp(), status: "Active"
+      };
+
+      // Save to Registry
+      await setDoc(doc(db, "students_registry", newRegNo), studentData);
+
+      // Create Ledger profile
+      await setDoc(doc(db, "bursaryLedgers", newRegNo), {
+        pupilName: fullName, className: className, regNo: newRegNo,
+        balLastTerm: 0, currentFees: 0, createdAt: serverTimestamp()
+      });
+
+      msg.innerHTML = `
+        <div class="bg-purple-50 border-2 border-purple-200 p-6 rounded-xl text-center">
+          <p class="text-purple-800 font-bold mb-2">✅ Student Registered Successfully!</p>
+          <p class="text-sm text-gray-600 mb-1">Official Registration Number:</p>
+          <p class="text-4xl font-black text-purple-700 tracking-wider">${newRegNo}</p>
+        </div>
+      `;
+      
+      $('fullName').value = ''; $('parentName').value = ''; $('parentAddress').value = ''; $('parentPhone').value = ''; $('className').value = ''; $('gender').value = ''; $('dobDay').value = ''; $('dobMonth').value = ''; $('dobYear').value = ''; if($('session')) $('session').value = '2025/2026';
+    } catch (err) {
+      msg.innerHTML = `<p class="text-red-600 font-bold text-center mt-4">❌ Error: ${err.message}</p>`;
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "GENERATE REG NO. & REGISTER";
+    }
+  };
+
+
+  /* --- LOAD REGISTRY LOGIC --- */
+  $("btn-load-registry").onclick = async () => {
+    const className = $("filterClass").value;
+    const sessionFilter = $("filterSession") ? $("filterSession").value : '';
+    const tbody = $("registry-tbody");
+    
+    if (!className) {
+      alert("Please select a class to load.");
+      return;
+    }
+
+    tbody.innerHTML = '<tr><td colspan="8" class="text-center p-10 font-bold text-gray-400">Loading Registry...</td></tr>';
+
+    try {
+      let q;
+      if (sessionFilter) {
+        q = query(collection(db, "students_registry"), where("className", "==", className), where("session", "==", sessionFilter));
+      } else {
+        q = query(collection(db, "students_registry"), where("className", "==", className));
+      }
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        tbody.innerHTML = `<tr><td colspan="8" class="text-center p-10 text-gray-400">No students registered in ${className} yet.</td></tr>`;
+        $("registry-summary").classList.add("hidden");
+        return;
+      }
+
+      // Show total count
+      $("total-children-count").textContent = snap.size;
+      $("registry-summary").classList.remove("hidden");
+
+      tbody.innerHTML = "";
+      snap.forEach(d => {
+        const r = d.data();
+        const row = document.createElement("tr");
+        row.className = "hover:bg-purple-50 transition-colors";
+
+        row.innerHTML = `
+          <td class="font-bold text-purple-700">${r.regNo}</td>
+          <td class="font-bold text-gray-800">${r.fullName}</td>
+          <td>${r.gender || '-'}</td>
+          <td>${r.dateOfBirth || '-'}</td>
+          <td>${r.parentName || '-'}</td>
+          <td>${r.parentAddress || '-'}</td>
+          <td>${r.parentPhone || '-'}</td>
+          <td class="text-center space-x-2">
+            <button class="btn-promote text-green-600 font-bold text-[10px] uppercase border border-green-200 px-2 py-1 rounded">Promote</button>
+            <button class="btn-edit text-blue-600 font-bold text-[10px] uppercase">Edit</button>
+            <button class="btn-delete text-red-600 font-bold text-[10px] uppercase">Delete</button>
+          </td>
+        `;
+
+        // Attach events
+        row.querySelector('.btn-edit').onclick = () => openEditModal(r);
+        row.querySelector('.btn-delete').onclick = () => deleteStudent(r.regNo, r.fullName);
+        const pbtn = row.querySelector('.btn-promote');
+        if (pbtn) {
+          pbtn.onclick = () => {
+            if(!$('promote-modal')) return alert('Promotion modal not available.');
+            $('promote-regNo').value = r.regNo;
+            $('promote-student-info').textContent = `Moving ${r.fullName} from ${r.className}`;
+            $('promote-newClass').value = r.className;
+            $('promote-modal').classList.remove('hidden');
+          };
+        }
+        
+        tbody.appendChild(row);
+      });
+
+    } catch (err) {
+      console.error(err);
+      tbody.innerHTML = `<tr><td colspan="6" class="text-center p-10 text-red-500">Error loading data.</td></tr>`;
+    }
+  };
+
+
+  /* --- EDIT LOGIC --- */
+  function openEditModal(data) {
+    $("edit-regNo").value = data.regNo;
+    $("edit-name").value = data.fullName;
+    $("edit-gender").value = data.gender || 'Male';
+    
+    // Parse DD/MM/YYYY format
+    if (data.dateOfBirth) {
+      const parts = data.dateOfBirth.split('/');
+      $("edit-dobDay").value = parts[0] || '';
+      $("edit-dobMonth").value = parts[1] || '';
+      $("edit-dobYear").value = parts[2] || '';
+    } else {
+      $("edit-dobDay").value = '';
+      $("edit-dobMonth").value = '';
+      $("edit-dobYear").value = '';
+    }
+    
+    $("edit-parent").value = data.parentName || '';
+    $("edit-parentAddress").value = data.parentAddress || '';
+    $("edit-phone").value = data.parentPhone || '';
+    $("edit-modal").classList.remove("hidden");
+  }
+
+  $("btn-save-edit").onclick = async () => {
+    const regNo = $("edit-regNo").value;
+    const newName = formatStudentName($("edit-name").value); // Ensure format!
+    const newGender = $("edit-gender").value;
+    const dobDay = $("edit-dobDay").value.padStart(2, '0');
+    const dobMonth = $("edit-dobMonth").value.padStart(2, '0');
+    const dobYear = $("edit-dobYear").value;
+    const newDateOfBirth = dobDay && dobMonth && dobYear ? `${dobDay}/${dobMonth}/${dobYear}` : '';
+    const newParent = formatStudentName($("edit-parent").value);
+    const newParentAddress = $("edit-parentAddress").value.trim();
+    const newPhone = $("edit-phone").value;
+    const btn = $("btn-save-edit");
+
+    if(!newName) return alert("Student name is required.");
+
+    try {
+      btn.textContent = "Saving..."; btn.disabled = true;
+      
+      // 1. Update Registry
+      await updateDoc(doc(db, "students_registry", regNo), {
+        fullName: newName, gender: newGender, dateOfBirth: newDateOfBirth, parentName: newParent, parentAddress: newParentAddress, parentPhone: newPhone
+      });
+
+      // 2. Update linked Bursary Ledger so names match across the system
+      await updateDoc(doc(db, "bursaryLedgers", regNo), {
+        pupilName: newName
+      });
+
+      $("edit-modal").classList.add("hidden");
+      $("btn-load-registry").click(); // Refresh list
+
+    } catch (err) {
+      console.error(err);
+      alert("Failed to update: " + err.message);
+    } finally {
+      btn.textContent = "Save Changes"; btn.disabled = false;
+    }
+  };
+
+  /* --- DELETE LOGIC --- */
+  async function deleteStudent(regNo, name) {
+    if(!confirm(`WARNING: Are you sure you want to completely delete "${name}" (${regNo})?\n\nThis removes them from the Registry AND deletes their Class Ledger profile!`)) return;
+
+    try {
+      // Delete from Registry
+      await deleteDoc(doc(db, "students_registry", regNo));
+      
+      // Delete from Ledgers (Since regNo is the Document ID)
+      await deleteDoc(doc(db, "bursaryLedgers", regNo));
+      
+      $("btn-load-registry").click(); // Refresh list
+    } catch (err) {
+      console.error(err);
+      alert("Delete failed: " + err.message);
+    }
+  }
+
+  /* --- PROMOTION LOGIC --- */
+  $('btn-confirm-promotion').onclick = async () => {
+    const regNo = $('promote-regNo').value;
+    const newClass = $('promote-newClass').value;
+
+    try {
+      // 1. Update the Registry (keeps regNo constant)
+      await updateDoc(doc(db, "students_registry", regNo), {
+        className: newClass
+      });
+
+      // 2. Update the Ledger to reflect the new class
+      await updateDoc(doc(db, "bursaryLedgers", regNo), {
+        className: newClass
+      });
+
+      alert("Student promoted successfully!");
+      $('promote-modal').classList.add('hidden');
+      $('btn-load-registry').click(); // Refresh table
+    } catch (err) {
+      alert("Promotion failed: " + err.message);
+    }
+  };
+
+  // Formatting helper on blur for Name input
+  $('fullName').addEventListener('blur', function() {
+    if (this.value) this.value = formatStudentName(this.value);
+  });
+  $('parentName').addEventListener('blur', function() {
+    if (this.value) this.value = formatStudentName(this.value);
+  });
+
+  /* --------------------------------------------------------------------------
+     SAVE CLASS FEE TEMPLATE LOGIC
+  -------------------------------------------------------------------------- */
+  $("btn-save-template").onclick = async () => {
+    const className = $("b-class").value;
+    if (!className) return alert("Please select a class first to save its template.");
+
+    const templateFees = {};
+    // Grab all ticked fees and their current amounts
+    document.querySelectorAll('.fee-tick:checked').forEach(cb => {
+      const amt = Number($(cb.dataset.target).value) || 0;
+      if (amt > 0) templateFees[cb.value] = amt;
+    });
+
+    const btn = $("btn-save-template");
+    const originalText = btn.innerHTML;
+    btn.innerHTML = "Saving...";
+    btn.disabled = true;
+
+    try {
+      // Overwrite or create the class template
+      await setDoc(doc(db, "feeTemplates", className), {
+        className: className,
+        fees: templateFees,
+        updatedAt: serverTimestamp()
+      });
+      
+      // Update local memory so it works immediately without refreshing
+      window.currentClassTemplate = templateFees;
+      alert(`✅ Default fees saved for ${className}`);
+    } catch (err) {
+      console.error("Error saving template:", err);
+      alert("❌ Error saving template: " + err.message);
+    } finally {
+      btn.innerHTML = originalText;
+      btn.disabled = false;
+    }
+  };
+
+  /* =========================================================
+     PENDING INSTALLMENTS LOGIC
+  ========================================================= */
+
+  // UNIVERSAL LEDGER HELPERS
+  function getPaidTotal(r){
+    return (Number(r.p1Amt)||0)+(Number(r.p2Amt)||0)+(Number(r.p3Amt)||0)+(Number(r.p4Amt)||0);
+  }
+  function getBalance(r){
+    return ((Number(r.balLastTerm)||0)+(Number(r.currentFees)||0)) - getPaidTotal(r);
+  }
+  function nextSlot(r){
+    if(!r.p1Amt) return 'p1';
+    if(!r.p2Amt) return 'p2';
+    if(!r.p3Amt) return 'p3';
+    if(!r.p4Amt) return 'p4';
+    return null;
+  }
+  async function saveInstalment(docId,row,amount,receipt,date){
+    const slot = nextSlot(row);
+    if(!slot) return alert('All 4 payments already used');
+    await updateDoc(doc(db,'bursaryLedgers',docId),{
+      [`${slot}Amt`]: Number(amount),
+      [`${slot}Rec`]: receipt,
+      [`${slot}Date`]: date
+    });
+  }
+
+  // Populate cp-class with same options as class lists
+  const classOptions = [`Daycare`,`Kindergarten 1 (KG1)`,`Kindergarten 2 (KG2)`,`Nursery 1`,`Nursery 2`,`Nursery 3`,`Basic 1 Onyx`,`Basic 1 Gold`,`Basic 2`,`Basic 3`,`Basic 4`,`Basic 5`,`Basic 6`,`JSS 1`,`JSS 2`,`JSS 3`];
+  const cpClass = $('cp-class');
+  if(cpClass){ cpClass.innerHTML = '<option value="">-- Select Class --</option>' + classOptions.map(c=>`<option>${c}</option>`).join(''); }
+
+  // Loader for incomplete payments
+  async function loadIncomplete(){
+    const className = $('cp-class').value;
+    const term = $('a-term').value;
+    if(!className) return alert('Please select a class');
+    const snap = await getDocs(query(collection(db,'bursaryLedgers'),where('className','==',className),where('term','==',term)));
+    const box = $('cp-results');
+    box.innerHTML='';
+    snap.forEach(d=>{
+      const r=d.data();
+      const bal=getBalance(r);
+      if(bal<=0) return;
+      const card = document.createElement('div');
+      card.className = 'p-4 border rounded-lg flex items-center justify-between';
+      card.innerHTML = `
+        <div>
+          <div class="font-bold text-gray-800">${r.pupilName}</div>
+          <div class="text-xs text-gray-500">${r.className} — ${r.term || ''}</div>
+          <div class="text-sm text-red-600 font-black">Balance: ₦${bal.toLocaleString()}</div>
+        </div>
+        <div class="space-y-2 text-right">
+          <button class="btn-complete bg-green-600 text-white px-3 py-2 rounded" data-id="${d.id}">Add Installment</button>
+        </div>
+      `;
+      box.appendChild(card);
+    });
+
+    // Attach handlers for add buttons
+    box.querySelectorAll('.btn-complete').forEach(btn=>{
+      btn.onclick = async () => {
+        const id = btn.dataset.id;
+        const docSnap = await getDoc(doc(db,'bursaryLedgers',id));
+        const row = docSnap.data();
+        // prefill main form for quick entry
+        selectPendingStudent(id,row);
+      };
+    });
+  }
+
+  if($('cp-load')) $('cp-load').onclick = loadIncomplete;
+
+  // 1. Search for students with unpaid balances
+  $("btn-search-pending").onclick = async () => {
+    const className = $("pending-class-filter").value;
+    const list = $("pending-list");
+    if (!className) return alert("Please select a class first");
+
+    list.innerHTML = "<p class='text-xs text-blue-500 animate-pulse'>Searching database...</p>";
+
+    try {
+      const q = query(collection(db, "bursaryLedgers"), where("className", "==", className));
+      const snap = await getDocs(q);
+      list.innerHTML = "";
+
+      let found = 0;
+      snap.forEach(d => {
+        const r = d.data();
+        const totalOwed = (Number(r.balLastTerm) || 0) + (Number(r.currentFees) || 0);
+        const totalPaid = (Number(r.p1Amt) || 0) + (Number(r.p2Amt) || 0) + (Number(r.p3Amt) || 0) + (Number(r.p4Amt) || 0);
+        
+        // ONLY SHOW if balance is remaining (Uncompleted)
+        if (totalOwed > totalPaid) {
+          found++;
+          const div = document.createElement("div");
+          div.className = "bg-white p-3 border-2 border-blue-100 rounded-lg shadow-sm hover:border-blue-500 cursor-pointer transition-all";
+          div.onclick = () => selectPendingStudent(d.id, r);
+          
+          div.innerHTML = `
+            <div class="flex justify-between items-start">
+              <div>
+                <p class="font-black text-sm text-gray-800">${r.pupilName}</p>
+                <p class="text-[10px] text-blue-600 font-bold">${r.term}</p>
+              </div>
+              <span class="bg-green-600 text-white px-2 py-1 rounded text-[10px] font-bold">ADD INSTALLMENT +</span>
+            </div>
+            <div class="mt-2 grid grid-cols-2 text-[10px] gap-2">
+              <p><span class="text-gray-400">OWED:</span> ₦${totalOwed.toLocaleString()}</p>
+              <p><span class="text-gray-400">PAID:</span> ₦${totalPaid.toLocaleString()}</p>
+            </div>
+          `;
+          list.appendChild(div);
+        }
+      });
+
+      if (found === 0) list.innerHTML = "<p class='text-xs text-green-600 font-bold'>✅ All students in this class have completed their payments!</p>";
+    } catch (e) { console.error(e); }
+  };
+
+  // 2. Select a student and auto-fill the main form
+  function selectPendingStudent(docId, data) {
+    $("selected-ledger-id").value = docId;
+    $("a-name").value = data.pupilName;
+    $("a-class").value = data.className;
+    $("a-term").value = data.term || "1st Term";
+    $("a-bal-last").value = data.balLastTerm || 0;
+    $("a-current-fees").value = data.currentFees || 0;
+    
+    // Highlight the hint so the bursar knows which installment this is
+    // (simple check placeholder)
+    const hint = $("payment-status-hint");
+    const totalOwed = (Number(data.balLastTerm) || 0) + (Number(data.currentFees) || 0);
+    const totalPaid = (Number(data.p1Amt) || 0) + (Number(data.p2Amt) || 0) + (Number(data.p3Amt) || 0) + (Number(data.p4Amt) || 0);
+    const remaining = totalOwed - totalPaid;
+    hint.textContent = `Remaining balance: ₦${remaining.toLocaleString()}`;
+    
+    updatePartAMath();
+    
+    // Smooth scroll to entry form
+    $("a-name").scrollIntoView({ behavior: "smooth" });
+    $("a-amount").focus();
+  }
+
+  function updatePartAMath(){
+    const bal = Number($("a-bal-last").value) || 0;
+    const cur = Number($("a-current-fees").value) || 0;
+    const total = bal + cur;
+    $("a-total-owed-display").textContent = `₦ ${total.toLocaleString()}.00`;
+  }
+
+  ["a-bal-last","a-current-fees"].forEach(id => { $(id).addEventListener('input', updatePartAMath); });
+
+  /* --------------------------------------------------------------------------
+     UPDATED SAVE LOGIC (Fixes Ledger Visibility Bug)
+  -------------------------------------------------------------------------- */
+  $("btn-save-a").onclick = async () => {
+    const btn = $("btn-save-a");
+    const msg = $("msg-a");
+    const ledgerId = $("selected-ledger-id").value;
+    
+    const data = {
+      pupilName: formatStudentName($("a-name").value),
+      className: $("a-class").value,
+      term: $("a-term").value,
+      amount: Number($("a-amount").value),
+      receipt: $("a-receipt").value,
+      date: $("a-date").value,
+      balLastTerm: Number($("a-bal-last").value),
+      currentFees: Number($("a-current-fees").value),
+      createdAt: serverTimestamp()
+    };
+
+    if (!data.pupilName || !data.amount) return alert("Missing Name or Amount");
+
+    btn.disabled = true;
+
+    try {
+      // 1. Save to Daily Entry Log (For historical records)
+      await addDoc(collection(db, "bursaryEntries"), data);
+
+      // 2. Update Class Ledger
+      const ledgerRef = collection(db, "bursaryLedgers");
+      
+      if (ledgerId) {
+        // SCENARIO A: Updating an existing student from the "Pending" list
+        const docSnap = await getDoc(doc(db, "bursaryLedgers", ledgerId));
+        const current = docSnap.data();
+        let updateData = {};
+        
+        if (!current.p1Amt) updateData = { p1Amt: data.amount, p1Rec: data.receipt, p1Date: data.date };
+        else if (!current.p2Amt) updateData = { p2Amt: data.amount, p2Rec: data.receipt, p2Date: data.date };
+        else if (!current.p3Amt) updateData = { p3Amt: data.amount, p3Rec: data.receipt, p3Date: data.date };
+        else updateData = { p4Amt: data.amount, p4Rec: data.receipt, p4Date: data.date };
+
+        await updateDoc(doc(db, "bursaryLedgers", ledgerId), updateData);
+      } else {
+        // SCENARIO B: Brand new student (Manual entry)
+        // SEARCH first to see if they exist (safety check)
+        const q = query(ledgerRef, where("pupilName", "==", data.pupilName), where("term", "==", data.term));
+        const snap = await getDocs(q);
+
+        if (snap.empty) {
+          // FIXED: Added "term" to the ledger object so it appears in the ledger file!
+          await addDoc(ledgerRef, {
+            pupilName: data.pupilName, 
+            className: data.className,
+            term: data.term, 
+            balLastTerm: data.balLastTerm,
+            currentFees: data.currentFees,
+            p1Amt: data.amount, p1Rec: data.receipt, p1Date: data.date,
+            p2Amt: 0, p3Amt: 0, p4Amt: 0
+          });
+        } else {
+          // Update found record... (Similar logic as Scenario A)
+          const docId = snap.docs[0].id;
+          const current = snap.docs[0].data();
+          let updateData = { p1Amt: data.amount }; // Simplified for example
+          if(current.p1Amt) updateData = { p2Amt: data.amount, p2Rec: data.receipt, p2Date: data.date };
+          await updateDoc(doc(db, "bursaryLedgers", docId), updateData);
+        }
+      }
+      
+      msg.innerHTML = "✅ Recorded Successfully!";
+      // Clear form & Refresh pending list
+      $("selected-ledger-id").value = "";
+      ["a-name", "a-amount", "a-receipt"].forEach(id => $(id).value = "");
+      $("btn-search-pending").click(); // Auto-refresh the pending list
+    } catch(e) { console.error(e); }
+    finally { btn.disabled = false; }
+  };
+
+</script>
+</body>
+</html>

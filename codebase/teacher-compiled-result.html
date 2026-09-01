@@ -1,0 +1,421 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>Enter Compiled Result</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 pb-10">
+
+<nav class="bg-gray-800 text-white shadow-lg">
+  <div class="max-w-6xl mx-auto px-4">
+    <div class="flex justify-between items-center h-16">
+      <div class="flex items-center gap-2">
+        <span class="font-black text-xl tracking-tight">TEACHER<span class="text-indigo-400">PORTAL</span></span>
+      </div>
+
+      <div class="hidden md:flex items-center gap-6 text-sm font-bold">
+        <a href="teacher-dashboard.html" class="hover:text-indigo-300 transition">Dashboard</a>
+        <a href="teacher-compiled-result.html" class="border-b-2 border-white pb-1">Enter Result</a>
+        <a href="teacher-process-results.html" class="hover:text-indigo-300 transition">Process Result</a>
+        <a href="teacher-advanced-result.html" class="hover:text-indigo-300 transition">Advanced Result</a>
+        <a href="teacher-manage-tests.html" class="hover:text-indigo-300 transition">Manage Test</a>
+        <a href="teacher-register-subjects.html" class="hover:text-indigo-300 transition">Subjects</a>
+      </div>
+
+      <div class="flex items-center gap-2">
+        <button id="mobile-menu-btn" class="md:hidden bg-gray-700 p-2 rounded-lg">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+        </button>
+        <button id="logoutBtnTop" class="hidden md:block text-red-400 font-bold hover:text-red-300 ml-4">Logout</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="mobile-menu" class="hidden md:hidden bg-gray-900 border-t border-gray-700 p-4 space-y-4 font-bold">
+    <a href="teacher-dashboard.html" class="block hover:text-indigo-300">Dashboard</a>
+    <a href="teacher-compiled-result.html" class="block text-indigo-400">Enter Result</a>
+    <a href="teacher-process-results.html" class="block hover:text-indigo-300">Process Result</a>
+    <a href="teacher-advanced-result.html" class="block hover:text-indigo-300">Advanced Result</a>
+    <a href="teacher-manage-tests.html" class="block hover:text-indigo-300">Manage Test</a>
+    <a href="teacher-register-subjects.html" class="block hover:text-indigo-300">Register Subjects</a>
+    <hr class="border-gray-700">
+    <button id="logoutBtnMob" class="block text-red-400">Logout</button>
+  </div>
+</nav>
+
+<div class="w-[96%] md:max-w-2xl mx-auto bg-white p-6 mt-6 rounded-2xl shadow-xl border border-gray-200">
+  
+  <h2 class="text-2xl font-black mb-6 text-gray-800 border-b pb-2 text-center">Enter Student Scores</h2>
+
+  <div class="space-y-6">
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div class="md:col-span-2">
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Student Full Name</label>
+        <input id="studentName" type="text" placeholder="e.g. John Doe" class="w-full p-4 border-2 border-gray-300 rounded-xl focus:ring-4 focus:ring-blue-100 focus:border-blue-600 outline-none transition-all">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Gender</label>
+        <select id="gender" class="w-full p-4 border-2 border-gray-300 rounded-xl bg-white outline-none">
+          <option value="">-- Select --</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Class</label>
+        <select id="className" class="w-full p-4 border-2 border-gray-300 rounded-xl bg-white outline-none">
+          <option value="">-- Select --</option>
+          <option>Basic 1 Onyx</option>
+          <option>Basic 1 Gold</option>
+          <option>Basic 2</option>
+          <option>Basic 3</option>
+          <option>Basic 4</option>
+          <option>Basic 5</option>
+          <option>Basic 6</option>
+          <option>JSS 1</option>
+          <option>JSS 2</option>
+          <option>JSS 3</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Subject</label>
+        <select id="subject" class="w-full p-4 border-2 border-gray-300 rounded-xl bg-white outline-none">
+          <option value="">-- Select Class First --</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Term</label>
+        <select id="term" class="w-full p-4 border-2 border-gray-300 rounded-xl bg-white outline-none">
+          <option value="1">1st Term</option>
+          <option value="2">2nd Term</option>
+          <option value="3">3rd Term</option>
+        </select>
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-500 uppercase mb-2">Session</label>
+        <input id="session" type="text" value="2025/2026" class="w-full p-4 border-2 border-gray-300 rounded-xl outline-none">
+      </div>
+    </div>
+
+    <div class="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-200">
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Exam (60)</label>
+        <input id="exam" type="number" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Test (20)</label>
+        <input id="test" type="number" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Project (10)</label>
+        <input id="project" type="number" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500">
+      </div>
+      <div>
+        <label class="block text-[10px] font-bold text-gray-400 uppercase mb-1">Other (10)</label>
+        <input id="other" type="number" class="w-full p-3 border rounded-lg outline-none focus:border-blue-500">
+      </div>
+    </div>
+
+    <div class="bg-yellow-50 p-4 rounded-xl border border-yellow-200">
+      <h3 class="text-xs font-bold text-gray-500 uppercase mb-3 border-b border-yellow-200 pb-1">
+        Behavioral Ratings (Rate 1-5)
+      </h3>
+      <div class="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+        
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Handwriting</label>
+          <select id="handwriting" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Musical Skills</label>
+          <select id="musical" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Sports</label>
+          <select id="sports" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Attentiveness</label>
+          <select id="attentiveness" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Attitude to Work</label>
+          <select id="attitude" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Health</label>
+          <select id="health" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+        <div>
+          <label class="block text-gray-600 text-xs mb-1">Politeness</label>
+          <select id="politeness" class="w-full p-2 border rounded bg-white">
+            <option value="5">5 - Excellent</option>
+            <option value="4">4 - Very Good</option>
+            <option value="3">3 - Good</option>
+            <option value="2">2 - Fair</option>
+            <option value="1">1 - Poor</option>
+          </select>
+        </div>
+
+      </div>
+    </div>
+
+    <div id="saveMsg" class="hidden text-center p-3 rounded-lg font-bold"></div>
+
+    <button id="saveBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-black py-5 rounded-2xl shadow-lg transition-all active:scale-95 uppercase tracking-widest">
+      Save Student Record
+    </button>
+
+  </div>
+</div>
+
+  <script>
+  // =====================
+  // PREDICTIVE SEARCH + FORMATTER (teacher)
+  // =====================
+  function formatStudentName(name) {
+    return name.trim().split(/\s+/).map(word => {
+      return word.charAt(0).toUpperCase() + word.slice(1).toLowerCase();
+    }).join(' ');
+  }
+
+  let registeredNames = [];
+  async function loadNamesForSearchTeacher() {
+    try {
+      const snap = await getDocs(collection(db, "students_registry"));
+      snap.forEach(doc => { if (doc.data().fullName) registeredNames.push(doc.data().fullName); });
+      registeredNames = [...new Set(registeredNames)];
+    } catch(e) { console.error(e); }
+  }
+  setTimeout(() => { attachPredictiveSearch && attachPredictiveSearch('studentName'); }, 500);
+  </script>
+
+<script type="module">
+  import { auth, db } from './firebase-config.js';
+  import { signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import { requireRole } from './auth-guard.js';
+  import { 
+    collection, addDoc, query, where, getDocs, serverTimestamp, writeBatch, doc, deleteDoc, getDoc
+  } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  const $ = id => document.getElementById(id);
+  let currentTeacherId = null;
+
+  // 1. Wait for Auth and DOM to be ready
+  requireRole('teacher').then(res => {
+    currentTeacherId = res.user.uid;
+    console.log("Teacher Authenticated:", currentTeacherId);
+    
+    // MATCHING THE IDS IN YOUR HTML: "className" and "saveBtn"
+    const classDropdown = $("className");
+    const saveBtn = $("saveBtn");
+
+    if (classDropdown) classDropdown.onchange = loadSubjects;
+    if (saveBtn) saveBtn.onclick = handleSave;
+  }).catch(err => {
+    console.error("Auth Guard Error:", err);
+  });
+
+  async function loadSubjects() {
+    const cls = $("className").value;
+    const subSelect = $("subject");
+    
+    if (!cls) {
+      subSelect.innerHTML = '<option value="">-- Select Class First --</option>';
+      return;
+    }
+
+    subSelect.innerHTML = '<option value="">-- Loading Subjects... --</option>';
+    
+    try {
+      // Direct lookup using the exact document ID formula from your registration page
+      const docId = `${currentTeacherId}_${cls.replace(/\s+/g, '')}`;
+      const docSnap = await getDoc(doc(db, "teacher_assignments", docId));
+      
+      if (!docSnap.exists()) {
+        subSelect.innerHTML = '<option value="">-- No Subjects Found --</option>';
+        return;
+      }
+
+      let options = '<option value="">-- Choose Subject --</option>';
+      const data = docSnap.data();
+      
+      data.subjects.forEach(s => {
+        options += `<option value="${s}">${s}</option>`;
+      });
+      
+      subSelect.innerHTML = options;
+    } catch (err) {
+      console.error("Error loading subjects:", err);
+      subSelect.innerHTML = '<option value="">-- Error Loading --</option>';
+    }
+  }
+
+  async function handleSave() {
+    const studentName = $("studentName").value.trim();
+    const gender = $("gender").value;
+    const className = $("className").value;
+    const subject = $("subject").value;
+    const term = $("term").value;
+    const session = $("session").value.trim();
+    const msgEl = $("saveMsg");
+
+    // Collect Behavior Scores
+    const behavior = {
+      handwriting: Number($("handwriting").value),
+      musical: Number($("musical").value),
+      sports: Number($("sports").value),
+      attentiveness: Number($("attentiveness").value),
+      attitude: Number($("attitude").value),
+      health: Number($("health").value),
+      politeness: Number($("politeness").value)
+    };
+
+    if (!studentName || !gender || !className || !subject || !term || !session) {
+      alert("Please fill all details, including Gender.");
+      return;
+    }
+
+    msgEl.classList.remove("hidden");
+    msgEl.className = "block text-center p-3 rounded-lg font-bold bg-blue-100 text-blue-700 mb-4";
+    msgEl.innerHTML = "⏳ Saving...";
+
+    try {
+      // 1. Check for duplicates
+      const duplicateQuery = query(
+        collection(db, "compiledResults"),
+        where("studentNameLower", "==", studentName.toLowerCase()),
+        where("className", "==", className),
+        where("subject", "==", subject),
+        where("term", "==", Number(term)),
+        where("session", "==", session)
+      );
+
+      const duplicateSnap = await getDocs(duplicateQuery);
+      if (!duplicateSnap.empty) {
+        const proceed = confirm("A record for this subject already exists. Overwrite?");
+        if (!proceed) {
+          msgEl.classList.add("hidden");
+          return;
+        }
+        const batch = writeBatch(db);
+        duplicateSnap.forEach(oldDoc => batch.delete(oldDoc.ref));
+        await batch.commit();
+      }
+
+      // 2. Calculate Total
+      const exam = Number($("exam").value) || 0;
+      const test = Number($("test").value) || 0;
+      const project = Number($("project").value) || 0;
+      const other = Number($("other").value) || 0;
+      const total = exam + test + project + other;
+
+      // 3. Save to Firestore
+      await addDoc(collection(db, "compiledResults"), {
+        studentName,
+        studentNameLower: studentName.toLowerCase(),
+        gender,
+        className,
+        subject,
+        term: Number(term),
+        session,
+        exam, test, project, other, total,
+        grade: gradeFromScore(total),
+        ...behavior, // Spread behavior ratings into the document
+        teacherId: currentTeacherId,
+        published: false,
+        feeCleared: false,
+        createdAt: serverTimestamp()
+      });
+
+      msgEl.className = "block text-center p-3 rounded-lg font-bold bg-green-100 text-green-700 mb-4";
+      msgEl.innerHTML = "✅ Saved Successfully!";
+      
+      // Clear numeric inputs (Leave Name/Gender/Class for faster entry of next subject)
+      $("exam").value = "";
+      $("test").value = "";
+      $("project").value = "";
+      $("other").value = "";
+      
+      setTimeout(() => msgEl.classList.add("hidden"), 3000);
+
+    } catch (err) {
+      console.error("Save Error:", err);
+      msgEl.className = "block text-center p-3 rounded-lg font-bold bg-red-100 text-red-700 mb-4";
+      msgEl.innerHTML = "❌ Error: " + err.message;
+    }
+  }
+
+  function gradeFromScore(s) {
+    if (s >= 80) return "A1";
+    if (s >= 70) return "B2";
+    if (s >= 65) return "B3";
+    if (s >= 60) return "C4";
+    if (s >= 55) return "C5";
+    if (s >= 50) return "C6";
+    if (s >= 45) return "D7";
+    if (s >= 40) return "E8";
+    return "F9";
+  }
+
+  // NAVIGATION: mobile menu toggle and logout handling
+  const mobileBtn = $("mobile-menu-btn");
+  const mobileMenu = $("mobile-menu");
+  if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");
+  if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(() => window.location.href = "portal.html");
+  if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(() => window.location.href = "portal.html");
+</script>
+</body>
+</html>

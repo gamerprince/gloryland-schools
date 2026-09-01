@@ -1,0 +1,158 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================================================
+    // HELPER FUNCTIONS
+    // ============================================================================
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isAdmin() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+    
+    function isTeacher() {
+      return isAuthenticated() && 
+             exists(/databases/$(database)/documents/teachers/$(request.auth.uid));
+    }
+    
+    function isTeacherOfResult(teacherId) {
+      return isAuthenticated() && request.auth.uid == teacherId;
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: STUDENTS
+    // ============================================================================
+    
+    match /students/{studentId} {
+      // Students can only read/write their own document
+      allow read: if isAuthenticated() && request.auth.uid == studentId;
+      allow create: if isAuthenticated() && request.auth.uid == studentId;
+      allow update, delete: if isAuthenticated() && request.auth.uid == studentId;
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: TEACHERS
+    // ============================================================================
+    
+    match /teachers/{teacherId} {
+      // Only admins can read teacher list
+      allow read: if isAdmin();
+      // Only teach can read/update their own profile
+      allow read, update: if isAuthenticated() && request.auth.uid == teacherId;
+      // Only admins can create/delete teachers
+      allow create, delete: if isAdmin();
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: ADMINS
+    // ============================================================================
+    
+    match /admins/{adminId} {
+      // Only admins can read admin list
+      allow read: if isAdmin();
+      // Only admin can read/update their own profile
+      allow read, update: if isAuthenticated() && request.auth.uid == adminId;
+      // Admins cannot be created or deleted via Firestore (manual setup only)
+      allow create, delete: if false;
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: TESTS
+    // ============================================================================
+    
+    match /tests/{testId} {
+      // Teachers can read tests
+      allow read: if isTeacher();
+      // Only the teacher who created it can modify
+      allow create: if isTeacher();
+      allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      
+      // Subcollection: questions
+      match /questions/{questionId} {
+        // Teachers can read questions
+        allow read: if isTeacher();
+        // Only teacher who created the test can modify questions
+        allow create, update, delete: if isTeacher() && 
+          get(/databases/$(database)/documents/tests/$(testId)).data.teacherId == request.auth.uid;
+      }
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: ATTEMPTS
+    // ============================================================================
+    
+    match /attempts/{attemptId} {
+      // Students can create their own attempts
+      allow create: if isAuthenticated();
+      
+      // Teachers can read attempts for their tests
+      allow read: if isTeacher() && 
+        exists(/databases/$(database)/documents/tests/$(resource.data.testId)) &&
+        get(/databases/$(database)/documents/tests/$(resource.data.testId)).data.teacherId == request.auth.uid;
+      
+      // No updates/deletes on attempts (immutable record)
+      allow update, delete: if false;
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: COMPILED RESULTS
+    // ============================================================================
+    
+    match /compiledResults/{resultId} {
+      // Teachers can create results for their students
+      allow create: if isTeacher() && 
+        request.resource.data.teacherId == request.auth.uid;
+      
+      // Teachers can read/update only their own results
+      allow read: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow update: if isTeacher() && 
+        resource.data.teacherId == request.auth.uid &&
+        // Teachers can only update score fields, not published/feeCleared
+        !request.resource.data.diff(resource.data).affectedKeys().hasAny(['published', 'feeCleared']);
+      
+      // Admins can read all results
+      allow read: if isAdmin();
+      
+      // Admins can update published & feeCleared flags
+      allow update: if isAdmin();
+      
+      // Students can read published results with fees cleared
+      allow read: if isAuthenticated() && 
+        resource.data.published == true && 
+        resource.data.feeCleared == true &&
+        resource.data.studentNameLower == request.auth.token.email.split('@')[0].toLowerCase();
+      
+      // No deletes
+      allow delete: if false;
+    }
+    
+    // ============================================================================
+    // COLLECTIONS: AUDIT LOGS
+    // ============================================================================
+    
+    match /auditLogs/{logId} {
+      // Admins can create logs (via backend function)
+      allow create: if isAdmin() || 
+        request.auth.token.email.endsWith('@gloryland.local');
+      
+      // Only admins can read logs
+      allow read: if isAdmin();
+      
+      // Logs are immutable
+      allow update, delete: if false;
+    }
+    
+    // ============================================================================
+    // DEFAULT: DENY ALL OTHER ACCESS
+    // ============================================================================
+    
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

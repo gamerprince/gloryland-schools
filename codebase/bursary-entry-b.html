@@ -1,0 +1,101 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Part B — Cash Analysis Entry</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 pb-10">
+<nav class="bg-blue-800 text-white p-4 flex justify-between">
+  <span class="font-bold">Part B: Cash Analysis</span>
+  <a href="bursary-entry.html" class="underline text-sm">Back to Dashboard</a>
+</nav>
+
+<div class="max-w-2xl mx-auto bg-white p-8 mt-6 rounded-xl shadow border">
+  <h2 class="text-xl font-bold mb-6 text-gray-700 border-b pb-2">New Entry</h2>
+  
+  <div class="grid grid-cols-1 gap-5">
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Fee Description</label>
+      <select id="category" class="w-full p-3 border-2 rounded-lg bg-gray-50 focus:border-blue-500 outline-none">
+        <option>Tuition Fees</option>
+        <option>Registration Fees</option>
+        <option>Exam Fees</option>
+        <option>Development Fees</option>
+        <option>PTA</option>
+        <option>Medical Fees</option>
+        <option>Uniform</option>
+        <option>Sportswear</option>
+        <option>Cardigan</option>
+        <option>Phonics/French Fees</option>
+        <option>CBT Fees</option>
+        <option>Robotics & Coding Fees</option>
+        <option>Lesson Fees</option>
+        <option>Excursion/Christmas/Extra Curricular Activity Fees</option>
+      </select>
+    </div>
+
+    <div class="grid grid-cols-2 gap-4">
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Amount (₦)</label>
+        <input id="amount" type="number" class="w-full p-3 border-2 rounded-lg bg-gray-50" placeholder="0.00">
+      </div>
+      <div>
+        <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Date</label>
+        <input id="date" type="date" class="w-full p-3 border-2 rounded-lg bg-gray-50">
+      </div>
+    </div>
+
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase mb-1">Payer/Student Name (Optional)</label>
+      <input id="payer" type="text" class="w-full p-3 border-2 rounded-lg bg-gray-50" placeholder="Who is paying?">
+    </div>
+
+    <button id="save" class="w-full bg-blue-700 text-white font-black py-4 rounded-lg mt-4 shadow-lg hover:bg-blue-800 active:scale-95 transition">
+      SUBMIT TO CASH ANALYSIS
+    </button>
+    <div id="msg" class="text-center font-bold text-sm"></div>
+  </div>
+</div>
+
+<script type="module">
+import { db } from "./firebase-config.js";
+import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+// Set default date to today
+$("date").valueAsDate = new Date();
+
+$("save").onclick = async () => {
+  const data = {
+    category: $("category").value,
+    amount: Number($("amount").value),
+    date: $("date").value,
+    payer: $("payer").value.trim(),
+    timestamp: serverTimestamp()
+  };
+
+  if (!data.amount || !data.date) {
+    $("msg").innerText = "❌ Please enter amount and date";
+    $("msg").className = "text-red-600 mt-4";
+    return;
+  }
+
+  $("save").disabled = true;
+  $("msg").innerText = "Saving...";
+
+  try {
+    await addDoc(collection(db, "cashAnalysis"), data);
+    $("msg").innerText = "✅ Successfully added to Cash Analysis!";
+    $("msg").className = "text-green-600 mt-4";
+    $("amount").value = "";
+    $("payer").value = "";
+  } catch (e) {
+    $("msg").innerText = "❌ Error: " + e.message;
+  }
+  $("save").disabled = false;
+};
+</script>
+</body>
+</html>

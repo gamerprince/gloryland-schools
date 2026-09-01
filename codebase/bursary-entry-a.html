@@ -1,0 +1,173 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Daily Entry — Bursary (Part A)</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 pb-10">
+<nav class="bg-green-800 text-white p-4 flex justify-between">
+  <span class="font-bold">Bursary: Daily Entry — Part A</span>
+  <div class="space-x-4">
+    <a href="bursary-entry.html" class="underline text-sm hover:text-green-200">Back to Dashboard</a>
+    <a href="portal.html" class="text-sm text-red-200 hover:text-red-100" onclick="sessionStorage.removeItem('bursaryAccess')">Exit</a>
+  </div>
+</nav>
+
+<div class="max-w-2xl mx-auto bg-white p-8 mt-6 rounded-xl shadow border">
+  <h2 class="text-xl font-bold mb-6 text-gray-700">Add New Payment</h2>
+  
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Pupil Name</label>
+      <input id="pupilName" type="text" class="w-full p-2 border rounded">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Sender Name</label>
+      <input id="senderName" type="text" class="w-full p-2 border rounded">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Class</label>
+      <select id="className" class="w-full p-2 border rounded bg-gray-50">
+        <option>Daycare</option>
+        <option>Kindergarten 1 (KG1)</option>
+        <option>Kindergarten 2 (KG2)</option>
+        <option>Nursery 1</option>
+        <option>Nursery 2</option>
+        <option>Nursery 3</option>
+        <option>Basic 1 Onyx</option>
+        <option>Basic 1 Gold</option>
+        <option>Basic 2</option>
+        <option>Basic 3</option>
+        <option>Basic 4</option>
+        <option>Basic 5</option>
+        <option>Basic 6</option>
+        <option>JSS 1</option>
+        <option>JSS 2</option>
+        <option>JSS 3</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Mode of Payment</label>
+      <select id="mode" class="w-full p-2 border rounded bg-gray-50">
+        <option>Cash</option>
+        <option>Bank Transfer</option>
+        <option>POS</option>
+        <option>Cheque</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Amount</label>
+      <input id="amount" type="number" class="w-full p-2 border rounded font-bold text-green-700">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Receipt No</label>
+      <input id="receipt" type="text" class="w-full p-2 border rounded">
+    </div>
+    <div class="md:col-span-2">
+      <label class="block text-xs font-bold text-gray-400 uppercase">Description</label>
+      <input id="description" type="text" class="w-full p-2 border rounded" placeholder="e.g. Balance for 2nd term">
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Academic Term</label>
+      <select id="term" class="w-full p-2 border rounded bg-gray-50">
+        <option>1st Term</option>
+        <option>2nd Term</option>
+        <option>3rd Term</option>
+      </select>
+    </div>
+    <div>
+      <label class="block text-xs font-bold text-gray-400 uppercase">Date</label>
+      <input id="date" type="date" class="w-full p-2 border rounded">
+    </div>
+    <div>
+      <label class="block text-sm font-bold text-gray-600 uppercase mb-1">Balance Owed (Remaining)</label>
+      <input id="balance" type="number" 
+        class="w-full p-4 border-2 border-gray-200 rounded-xl font-bold text-red-600 text-lg focus:border-green-500" 
+        placeholder="Amount left to pay">
+    </div>
+  </div>
+
+  <button id="save" class="w-full bg-green-600 text-white font-black py-4 mt-8 rounded-xl shadow-lg">SAVE TRANSACTION</button>
+  <p id="msg" class="text-center mt-4 font-bold"></p>
+</div>
+
+<script type="module">
+  import { db } from './firebase-config.js';
+  import { collection, addDoc, getDocs, query, where, updateDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+  if (sessionStorage.getItem('bursaryAccess') !== 'true') window.location.href = 'bursary-login.html';
+
+  document.getElementById('save').onclick = async () => {
+    const btn = document.getElementById('save');
+    const msg = document.getElementById('msg');
+    
+    const data = {
+      pupilName: document.getElementById('pupilName').value.trim(),
+      senderName: document.getElementById('senderName').value,
+      className: document.getElementById('className').value,
+      mode: document.getElementById('mode').value,
+      amount: Number(document.getElementById('amount').value),
+      receipt: document.getElementById('receipt').value,
+      description: document.getElementById('description').value,
+      date: document.getElementById('date').value,
+      balance: Number(document.getElementById('balance').value),
+      term: document.getElementById('term').value,
+      createdAt: serverTimestamp()
+    };
+
+    if (!data.pupilName || !data.amount) return alert("Pupil Name and Amount are required");
+
+    try {
+      btn.disabled = true;
+      btn.textContent = "SAVING...";
+
+      // 1. Save to Daily Log
+      await addDoc(collection(db, "bursaryEntries"), data);
+
+      // 2. Update/Create Ledger Record
+      const ledgerRef = collection(db, "bursaryLedgers");
+      const q = query(ledgerRef, where("pupilName", "==", data.pupilName), where("className", "==", data.className), where("term", "==", data.term));
+      const snap = await getDocs(q);
+
+      if (snap.empty) {
+        // Create new ledger record if student not found
+        await addDoc(ledgerRef, {
+          pupilName: data.pupilName,
+          className: data.className,
+          term: data.term,
+          balLastTerm: 0,
+          currentFees: 0,
+          p1Amt: data.amount, p1Rec: data.receipt, p1Date: data.date,
+          p2Amt: 0, p3Amt: 0, p4Amt: 0
+        });
+      } else {
+        // Update existing record (Find the next empty payment slot p1-p4)
+        const docId = snap.docs[0].id;
+        const current = snap.docs[0].data();
+        let updateData = {};
+
+        if (!current.p1Amt) updateData = { p1Amt: data.amount, p1Rec: data.receipt, p1Date: data.date };
+        else if (!current.p2Amt) updateData = { p2Amt: data.amount, p2Rec: data.receipt, p2Date: data.date };
+        else if (!current.p3Amt) updateData = { p3Amt: data.amount, p3Rec: data.receipt, p3Date: data.date };
+        else if (!current.p4Amt) updateData = { p4Amt: data.amount, p4Rec: data.receipt, p4Date: data.date };
+
+        if (Object.keys(updateData).length > 0) {
+          await updateDoc(doc(db, "bursaryLedgers", docId), updateData);
+        }
+      }
+
+      msg.className = "text-green-600 text-center mt-4 font-bold";
+      msg.textContent = "✅ Saved Successfully!";
+      setTimeout(() => window.location.reload(), 1500);
+
+    } catch (err) {
+      console.error(err);
+      alert("Error: " + err.message);
+      btn.disabled = false;
+    }
+  };
+</script>
+</body>
+</html>

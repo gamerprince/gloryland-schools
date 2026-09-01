@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Exam — Gloryland Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<!-- ===============================
+     FIREBASE LOGIC
+================================ -->
+<script type="module">
+import { db, auth } from "./firebase-config.js";
+import {
+  doc,
+  getDoc,
+  collection,
+  getDocs,
+  query,
+  where
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import {
+  onAuthStateChanged,
+  signOut
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const $ = id => document.getElementById(id);
+
+/* ===============================
+   AUTH + LOAD STUDENT DASHBOARD
+================================ */
+onAuthStateChanged(auth, async (user) => {
+  if (!user) {
+    window.location.href = "student-login.html";
+    return;
+  }
+
+  $("student-email").textContent = user.email;
+
+  try {
+    const studentRef = doc(db, "students", user.uid);
+    const studentSnap = await getDoc(studentRef);
+
+    if (!studentSnap.exists()) {
+      $("tests-list").innerHTML = `
+        <div class="p-4 bg-red-100 border rounded">
+          Student profile not found. Contact admin.
+        </div>`;
+      return;
+    }
+
+    const student = studentSnap.data();
+
+    if (!student.className) {
+      $("tests-list").innerHTML = `
+        <div class="p-4 bg-yellow-100 border rounded">
+          No class assigned to this student.
+        </div>`;
+      return;
+    }
+
+    loadTests(student.className);
+
+  } catch (err) {
+    console.error(err);
+    $("tests-list").innerHTML = "Failed to load student profile.";
+  }
+});
+
+/* ===============================
+   LOAD EXAMS
+================================ */
+async function loadTests(className) {
+  const list = $("tests-list");
+  list.innerHTML = "Loading exams...";
+
+  const q = query(
+    collection(db, "tests"),
+    where("className", "==", className),
+    where("status", "==", "published")
+  );
+
+  const snap = await getDocs(q);
+  list.innerHTML = "";
+
+  if (snap.empty) {
+    list.innerHTML = `No published exams for ${className}`;
+    return;
+  }
+
+  snap.forEach(docSnap => {
+    const test = docSnap.data();
+    const testId = docSnap.id;
+
+    const card = document.createElement("div");
+    card.className = "p-3 border rounded flex justify-between";
+
+    card.innerHTML = `
+      <div>
+        <strong>${test.subject}</strong><br>
+        <span class="text-sm">${test.title}</span>
+      </div>
+    `;
+
+    const btn = document.createElement("button");
+    btn.textContent = "Take Exam";
+    btn.className = "px-3 py-1 bg-blue-600 text-white rounded";
+    btn.onclick = () => {
+      window.location.href = `student-exam.html?testId=${testId}`;
+    };
+
+    card.appendChild(btn);
+    list.appendChild(card);
+  });
+}
+
+/* ===============================
+   LOGOUT
+================================ */
+$("logout-btn").onclick = async () => {
+  await signOut(auth);
+  window.location.href = "student-login.html";
+};
+</script>
+
+
+
+
+<!-- ===============================
+     UI
+================================ -->
+<div class="max-w-4xl mx-auto px-6 py-8">
+  <div class="flex justify-between items-center mb-6">
+    <h1 class="text-2xl font-bold">Student Exam</h1>
+    <nav class="space-x-3 flex items-center">
+      <span id="student-email" class="text-xs text-gray-600"></span>
+      <a href="portal.html" class="text-sm text-blue-600 hover:underline">Portal</a>
+      <button id="logout-btn"
+        class="text-sm px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700">
+        Logout
+      </button>
+    </nav>
+  </div>
+
+  <div class="bg-white p-6 rounded shadow">
+    <h3 class="font-semibold mb-2">Available Tests</h3>
+    <div id="tests-list" class="space-y-2"></div>
+  </div>
+</div>
+
+</body>
+</html>

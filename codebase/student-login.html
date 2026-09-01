@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Student Login — Gloryland Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gradient-to-br from-blue-50 to-blue-100 min-h-screen text-gray-800">
+
+<div class="max-w-md mx-auto px-6 py-20">
+  <div class="bg-white p-8 rounded-lg shadow-lg">
+    <h1 class="text-3xl font-bold mb-2 text-blue-700 text-center">Student Login</h1>
+    <p class="text-center text-gray-600 text-sm mb-6">Gloryland Foundation Academy</p>
+
+    <!-- TAB BUTTONS -->
+    <div class="flex gap-2 mb-6 border-b">
+      <button id="tab-login" class="flex-1 py-2 font-semibold text-blue-700 border-b-2 border-blue-700">
+        Login
+      </button>
+      <button id="tab-signup" class="flex-1 py-2 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800">
+        Register
+      </button>
+    </div>
+
+    <!-- LOGIN FORM -->
+    <form id="login-form" class="space-y-3">
+      <input id="login-email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required />
+      <input id="login-password" type="password" placeholder="Password" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required />
+      <button type="submit" class="w-full bg-blue-600 text-white p-3 rounded-lg font-semibold hover:bg-blue-700 transition">
+        Sign In
+      </button>
+    </form>
+
+    <!-- SIGNUP FORM (hidden by default) -->
+    <form id="signup-form" class="space-y-3 hidden">
+      <input id="signup-name" type="text" placeholder="Full Name" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required />
+      <input id="signup-email" type="email" placeholder="Email" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required />
+      <input id="signup-password" type="password" placeholder="Password (min 6 chars)" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required />
+<select id="signup-class" class="w-full p-3 border rounded-lg focus:outline-none focus:border-blue-500" required>
+  <option value="">Select your Class</option>
+  <option>Basic 1 Onyx</option>
+  <option>Basic 1 Gold</option>
+  <option>Basic 2</option>
+  <option>Basic 3</option>
+  <option>Basic 4</option>
+  <option>Basic 5</option>
+  <option>Basic 6</option>
+  <option>JSS 1</option>
+  <option>JSS 2</option>
+  <option>JSS 3</option>
+</select>
+      <button type="submit" class="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition">
+        Create Account
+      </button>
+    </form>
+
+    <!-- MESSAGE -->
+    <p id="msg" class="text-sm mt-4 text-center"></p>
+
+    <!-- DIVIDER -->
+    <div class="my-4 border-t"></div>
+
+    <!-- GUEST ACCESS (for practice) -->
+    <p class="text-xs text-gray-500 text-center mb-2">Or continue as guest (limited access)</p>
+    <button id="guest-btn" class="w-full border-2 border-gray-300 text-gray-700 p-3 rounded-lg font-semibold hover:border-gray-400 transition">
+      Continue as Guest
+    </button>
+
+    <!-- BACK LINK -->
+    <p class="text-center mt-4"><a href="portal.html" class="text-blue-600 hover:underline text-sm">← Back to Portal</a></p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import {
+  collection,
+  serverTimestamp,
+  query,
+  where,
+  getDocs,
+  doc,    /* ADDED THIS */
+  setDoc  /* ADDED THIS */
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+const msg = $('msg');
+
+// TAB SWITCHING
+$('tab-login').onclick = () => {
+  $('login-form').classList.remove('hidden');
+  $('signup-form').classList.add('hidden');
+  $('tab-login').className = 'flex-1 py-2 font-semibold text-blue-700 border-b-2 border-blue-700';
+  $('tab-signup').className = 'flex-1 py-2 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800';
+  msg.textContent = '';
+};
+
+$('tab-signup').onclick = () => {
+  $('signup-form').classList.remove('hidden');
+  $('login-form').classList.add('hidden');
+  $('tab-signup').className = 'flex-1 py-2 font-semibold text-blue-700 border-b-2 border-blue-700';
+  $('tab-login').className = 'flex-1 py-2 font-semibold text-gray-600 border-b-2 border-transparent hover:text-gray-800';
+  msg.textContent = '';
+};
+
+// LOGIN
+$('login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = 'Signing in...';
+
+  const email = $('login-email').value.trim();
+  const password = $('login-password').value;
+
+  try {
+    await signInWithEmailAndPassword(auth, email, password);
+    msg.innerHTML = '✅ Login successful! Redirecting...';
+    setTimeout(() => {
+      window.location.href = 'student.html';
+    }, 1500);
+  } catch (err) {
+    msg.innerHTML = '❌ ' + err.message;
+  }
+});
+
+// SIGNUP - EDITED TO USE SETDOC
+$('signup-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  msg.textContent = 'Creating account...';
+
+  const name = $('signup-name').value.trim();
+  const email = $('signup-email').value.trim();
+  const password = $('signup-password').value;
+  const className = $('signup-class').value.trim();
+
+  try {
+    console.log("STARTING SIGNUP");
+
+    const cred = await createUserWithEmailAndPassword(auth, email, password);
+    const uid = cred.user.uid;
+
+    console.log("AUTH CREATED UID:", uid);
+    console.log("ABOUT TO WRITE FIRESTORE");
+
+    await setDoc(doc(db, 'students', uid), {
+      uid,
+      name,
+      email,
+      className,
+      createdAt: serverTimestamp()
+    });
+
+    console.log("FIRESTORE WRITE SUCCESS");
+
+    msg.innerHTML = '✅ Account created!';
+    setTimeout(() => {
+      window.location.href = 'student.html';
+    }, 2000);
+
+  } catch (err) {
+    console.error("SIGNUP ERROR:", err);
+    msg.innerHTML = '❌ ' + err.message;
+  }
+});
+
+
+// GUEST LOGIN - EDITED TO USE SETDOC
+$('guest-btn').onclick = async () => {
+  msg.textContent = 'Signing in as guest...';
+  
+  try {
+    const guestEmail = `guest-${Date.now()}@gloryland.local`;
+    const guestPassword = 'Guest123!';
+
+    const cred = await createUserWithEmailAndPassword(auth, guestEmail, guestPassword);
+    const uid = cred.user.uid;
+
+    await setDoc(doc(db, 'students', uid), {
+      uid: uid,
+      name: 'Guest Student',
+      email: guestEmail,
+      className: 'Guest',
+      isGuest: true,
+      createdAt: serverTimestamp()
+    });
+
+    msg.innerHTML = '✅ Guest login successful! Redirecting...';
+    setTimeout(() => {
+      window.location.href = 'student.html';
+    }, 2000);
+  } catch (err) {
+    msg.innerHTML = '❌ ' + err.message;
+  }
+};
+
+
+</script>
+
+</body>
+</html>
+  

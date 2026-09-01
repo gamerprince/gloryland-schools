@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Stock Login — Gloryland Foundation Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-100 min-h-screen flex items-center justify-center p-4">
+
+  <div class="w-full max-w-md bg-white rounded-3xl shadow-xl p-8 border border-purple-100">
+    <div class="text-center mb-8">
+      <div class="w-16 h-16 bg-purple-100 text-purple-700 rounded-2xl flex items-center justify-center text-3xl mx-auto mb-3">
+        📦
+      </div>
+      <h1 class="text-2xl font-black text-gray-800 tracking-tight">Stock Portal Login</h1>
+      <p class="text-xs text-gray-500 font-semibold mt-1">Gloryland Foundation Academy</p>
+    </div>
+
+    <form id="stock-login-form" class="space-y-5">
+      <div>
+        <label class="block text-xs font-bold uppercase text-gray-500 mb-1">Access Password</label>
+        <input 
+          id="stock-password" 
+          type="password" 
+          placeholder="Enter authorization password" 
+          class="w-full p-3.5 border border-gray-300 rounded-xl text-sm font-semibold outline-none focus:border-purple-600 focus:ring-2 focus:ring-purple-100 transition"
+          required 
+        />
+      </div>
+
+      <div id="error-message" class="hidden text-xs text-red-600 font-bold bg-red-50 p-3 rounded-xl text-center border border-red-200">
+        Incorrect password! Access denied.
+      </div>
+
+      <button type="submit" class="w-full bg-purple-700 text-white p-3.5 rounded-xl font-bold hover:bg-purple-800 shadow-md transition">
+        Unlock Stock Inventory
+      </button>
+    </form>
+
+    <div class="mt-6 text-center">
+      <a href="portal.html" class="text-xs text-gray-400 font-bold hover:text-purple-600 transition">← Back to Main Portal</a>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('stock-login-form').onsubmit = function (e) {
+      e.preventDefault();
+      const password = document.getElementById('stock-password').value;
+      const errorMsg = document.getElementById('error-message');
+
+      if (password === 'land2026') {
+        sessionStorage.setItem('stockAccess', 'true');
+        window.location.href = 'stock-inventory.html';
+      } else {
+        errorMsg.classList.remove('hidden');
+        document.getElementById('stock-password').value = '';
+      }
+    };
+  </script>
+</body>
+</html>

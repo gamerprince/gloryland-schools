@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Admin — Gloryland Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="invoice.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800">
+
+<header class="bg-white shadow">
+  <div class="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
+    <h1 class="text-lg font-bold text-red-600">Admin Dashboard</h1>
+    <nav class="space-x-3">
+      <a href="portal.html" class="text-sm text-blue-600 hover:underline">Portal</a>
+      <a href="index.html" class="text-sm text-gray-600 hover:underline">Home</a>
+    </nav>
+  </div>
+</header>
+
+<nav class="bg-gray-900 text-white p-3 flex gap-4">
+  <a href="admin.html">Dashboard</a>
+  <a href="admin-results.html">Manage Results</a>
+  <a href="admin-broadsheet.html">Broadsheet</a>
+  <button id="nav-logout" class="ml-auto">Logout</button>
+</nav>
+
+<script type="module">
+/* ================== FIREBASE IMPORTS ================== */
+import { app, db, auth, firebaseConfig } from "./firebase-config.js";
+
+import {
+  collection, getDocs, query, where, orderBy, doc, getDoc,
+  writeBatch, addDoc, deleteDoc, serverTimestamp, setDoc, updateDoc
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+import { 
+  getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, 
+  reauthenticateWithCredential, EmailAuthProvider, updatePassword,
+  createUserWithEmailAndPassword 
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
+
+const secondaryApp = initializeApp(firebaseConfig, "Secondary");
+const secondaryAuth = getAuth(secondaryApp);
+const $ = id => document.getElementById(id);
+
+/* ================== TEACHER MANAGEMENT ================== */
+async function addTeacher() {
+  const name = $('teacher-name').value.trim();
+  const email = $('teacher-email').value.trim();
+  const msg = $('teacher-msg');
+
+  if (!name || !email) return alert("Please enter Name and Email");
+
+  try {
+    msg.innerHTML = "⏳ Creating teacher account...";
+    const tempPassword = "Temp" + Math.floor(100000 + Math.random() * 900000) + "!";
+    const cred = await createUserWithEmailAndPassword(secondaryAuth, email, tempPassword);
+    const uid = cred.user.uid;
+    await signOut(secondaryAuth);
+
+    await setDoc(doc(db, "teachers", uid), {
+      uid: uid, name: name, email: email, role: "teacher",
+      status: "active", createdAt: serverTimestamp(), tempPassword: tempPassword 
+    });
+
+    msg.innerHTML = `<div class="bg-green-100 p-3 rounded text-green-800 border border-green-300">
+      ✅ Teacher Created Successfully!<br>Email: <strong>${email}</strong><br>
+      Temp Password: <strong class="text-red-600 text-lg">${tempPassword}</strong>
+    </div>`;
+    $('teacher-name').value = ""; $('teacher-email').value = ""; loadTeachers(); 
+  } catch (err) { msg.innerHTML = `<span class="text-red-600">❌ Error: ${err.message}</span>`; }
+}
+$('add-teacher-btn').onclick = addTeacher;
+
+async function loadTeachers() {
+  const list = $('teachers-list');
+  list.innerHTML = "Loading...";
+  const snap = await getDocs(collection(db, "teachers"));
+  list.innerHTML = "";
+  snap.forEach(tdoc => {
+    const t = tdoc.data();
+    const div = document.createElement("div");
+    div.className = "flex justify-between items-center p-2 border rounded bg-gray-50";
+    div.innerHTML = `<span><strong>${t.name}</strong> (${t.email})</span>
+      <button class="text-red-600 text-sm hover:underline" onclick="deleteTeacher('${tdoc.id}')">Delete</button>`;
+    list.appendChild(div);
+  });
+}
+
+/* ================== STUDENT STATISTICS (UPDATED) ================== */
+async function loadStudentStats() {
+  const grid = $('student-stats-grid');
+  const totalDisplay = $('total-students-count');
+  
+  try {
+    const snap = await getDocs(collection(db, "students"));
+    const classCounts = {};
+    let total = 0;
+
+    snap.forEach(docSnap => {
+      const s = docSnap.data();
+      
+      // SKIP GUEST ACCOUNTS: If they are marked as a guest or their class is "Guest", skip them.
+      if (s.isGuest || s.className === 'Guest') {
+        return; // This acts like 'continue' in a forEach loop
+      }
+
+      const className = s.className || "Unassigned";
+      classCounts[className] = (classCounts[className] || 0) + 1;
+      total++;
+    });
+
+    window.globalTotalStudents = total; // Save for invoice (now without guests!)
+    totalDisplay.textContent = total;
+    grid.innerHTML = "";
+    
+    const sortedClasses = Object.keys(classCounts).sort();
+    sortedClasses.forEach(cls => {
+      const card = document.createElement("div");
+      card.className = "bg-white p-3 rounded border border-gray-100 flex justify-between items-center shadow-sm";
+      card.innerHTML = `<span class="text-xs font-bold text-gray-500">${cls}</span>
+                        <span class="text-lg font-black text-blue-700">${classCounts[cls]}</span>`;
+      grid.appendChild(card);
+    });
+  } catch (err) {
+    console.error("Stats Error:", err);
+  }
+}
+
+window.deleteTeacher = async (id) => {
+  if(!confirm("Delete this teacher profile?")) return;
+  await deleteDoc(doc(db, "teachers", id));
+  loadTeachers();
+};
+
+/* ================== DATA MIGRATION TOOL ================== */
+$('migrateBtn').onclick = async () => {
+  const fromSession = $('from-session').value.trim();
+  const toSession = $('to-session').value.trim();
+  const btn = $('migrateBtn');
+  const msg = $('migrate-msg');
+
+  if (!fromSession || !toSession) {
+    msg.innerHTML = '<span class="text-red-600">❌ Please enter both From and To sessions</span>';
+    return;
+  }
+
+  if (fromSession === toSession) {
+    msg.innerHTML = '<span class="text-red-600">❌ Sessions must be different</span>';
+    return;
+  }
+
+  const confirm_msg = `Migrate ALL records from "${fromSession}" to "${toSession}"? This cannot be undone!`;
+  if (!confirm(confirm_msg)) return;
+
+  btn.disabled = true;
+  msg.innerHTML = '<span class="text-blue-600">⏳ Processing migration...</span>';
+
+  try {
+    // 1. Find all records with the old session
+    const q = query(
+      collection(db, "compiledResults"),
+      where("session", "==", fromSession)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      msg.innerHTML = `<span class="text-red-600">❌ No records found with session "${fromSession}"</span>`;
+      btn.disabled = false;
+      return;
+    }
+
+    // 2. Batch update all records
+    const batch = writeBatch(db);
+    let updateCount = 0;
+
+    snap.forEach(docSnap => {
+      batch.update(docSnap.ref, { session: toSession });
+      updateCount++;
+    });
+
+    await batch.commit();
+
+    msg.innerHTML = `<span class="text-green-600 font-bold">✅ Success! Migrated ${updateCount} records from "${fromSession}" to "${toSession}"</span>`;
+    
+    // Clear inputs
+    $('from-session').value = "";
+    $('to-session').value = "";
+
+  } catch (err) {
+    console.error("Migration Error:", err);
+    msg.innerHTML = `<span class="text-red-600">❌ Error: ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+  }
+};
+
+/* ================== RANKING LOGIC (UPDATED) ================== */
+$('rankBtn').onclick = async () => {
+  const className = $('rank-class').value;
+  const term = Number($('rank-term').value);
+  // .trim() removes hidden spaces that cause "No results found"
+  const session = $('rank-session').value.trim();
+  const btn = $('rankBtn');
+  const msg = $('rank-msg');
+
+  if (!className || !term || !session) return alert("Please select Class, Term and Session");
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Processing...";
+  msg.textContent = "Gathering results...";
+
+  try {
+    // 1. Get ALL results for this class/term/session
+    const q = query(
+      collection(db, "compiledResults"),
+      where("className", "==", className),
+      where("term", "==", term),
+      where("session", "==", session)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      // Log for debugging to see why it failed
+      console.log(`Search failed for: "${className}", Term: ${term}, Session: "${session}"`);
+      throw new Error(`No results found for ${className} (${session}). Check if the Session name matches the teacher's entry.`);
+    }
+
+    // 2. Group by Student (using standardized name keys)
+    const students = {};
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      // Using lowercase + trim for the key ensures "John Doe" and "john doe" are the same person
+      const nameKey = data.studentName.trim().toLowerCase();
+      
+      if (!students[nameKey]) {
+        students[nameKey] = { 
+          displayName: data.studentName, 
+          grandTotal: 0, 
+          docIds: [] 
+        };
+      }
+      students[nameKey].grandTotal += (data.total || 0);
+      students[nameKey].docIds.push(docSnap.id);
+    });
+
+    // 3. Sort Students by Grand Total (Highest first)
+    const sortedStudents = Object.values(students).sort((a, b) => b.grandTotal - a.grandTotal);
+    const totalStudentsInClass = sortedStudents.length;
+
+    msg.textContent = `Ranking ${totalStudentsInClass} students...`;
+
+    // 4. Update Firestore in a single Batch
+    const batch = writeBatch(db);
+
+    sortedStudents.forEach((student, index) => {
+      const position = index + 1;
+      
+      student.docIds.forEach(docId => {
+        const ref = doc(db, "compiledResults", docId);
+        batch.update(ref, { 
+          position: position,
+          classSize: totalStudentsInClass,
+          published: true 
+        });
+      });
+    });
+
+    await batch.commit();
+    msg.innerHTML = `<span class="text-green-600 font-bold">✅ Success! Ranked ${totalStudentsInClass} students in ${className}. Results are now Published.</span>`;
+
+  } catch (err) {
+    console.error("Ranking Error:", err);
+    msg.innerHTML = `<span class="text-red-600">❌ Error: ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Assign Positions & Publish";
+  }
+};
+
+/* ================== BULK CLEAR FEES ================== */
+$('clearFeesBtn').onclick = async () => {
+  const className = $('fee-class').value;
+  const term = Number($('fee-term').value);
+  const session = $('fee-session').value.trim();
+  const btn = $('clearFeesBtn');
+  const msg = $('fee-msg');
+
+  if (!className || !term || !session) return alert("Please select Class, Term and Session");
+
+  if (!confirm(`Are you sure you want to CLEAR FEES for ALL students in ${className} (${term} Term, ${session})?`)) return;
+
+  btn.disabled = true;
+  btn.textContent = "⏳ Processing...";
+  msg.textContent = "Gathering records...";
+
+  try {
+    const q = query(
+      collection(db, "compiledResults"),
+      where("className", "==", className),
+      where("term", "==", term),
+      where("session", "==", session)
+    );
+
+    const snap = await getDocs(q);
+
+    if (snap.empty) {
+      throw new Error(`No results found for ${className} (${session}).`);
+    }
+
+    const batch = writeBatch(db);
+    let studentSet = new Set();
+    
+    snap.forEach(docSnap => {
+      const data = docSnap.data();
+      studentSet.add(data.studentName.trim().toLowerCase());
+      batch.update(docSnap.ref, { feeCleared: true });
+    });
+
+    await batch.commit();
+    const totalStudents = studentSet.size;
+    
+    msg.innerHTML = `<span class="text-green-600 font-bold">✅ Success! Fees cleared for ${totalStudents} students in ${className}.</span>`;
+
+  } catch (err) {
+    console.error("Clear Fees Error:", err);
+    msg.innerHTML = `<span class="text-red-600">❌ Error: ${err.message}</span>`;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Clear Fees for Class";
+  }
+};
+
+/* ================== AUTH & LOGIN ================== */
+$('login-form').onsubmit = async (e) => {
+  e.preventDefault();
+  try { await signInWithEmailAndPassword(auth, $('admin-email').value, $('admin-pass').value); } 
+  catch (err) { alert(err.message); }
+};
+
+const logout = () => signOut(auth);
+$('btn-logout').onclick = logout; $('nav-logout').onclick = logout;
+
+onAuthStateChanged(auth, async user => {
+  if (!user) {
+    $('login-card').classList.remove('hidden'); $('admin-area').classList.add('hidden'); return;
+  }
+  const adminSnap = await getDoc(doc(db, "admins", user.uid));
+  if (!adminSnap.exists()) { alert("Access denied."); await signOut(auth); return; }
+
+  $('login-card').classList.add('hidden'); $('admin-area').classList.remove('hidden');
+  $('admin-user').textContent = user.email;
+  
+  // LOAD THE DATA
+  loadTeachers();
+  loadStudentStats(); // <--- Add this line here
+});
+
+</script>
+
+<div class="max-w-6xl mx-auto px-6 py-8">
+  <div id="login-card" class="bg-white p-6 rounded shadow max-w-md mx-auto mt-10">
+    <h2 class="text-xl font-bold mb-4 text-center">Admin Login</h2>
+    <form id="login-form" class="space-y-3">
+      <input id="admin-email" placeholder="Admin email" class="w-full p-2 border rounded" required />
+      <input id="admin-pass" type="password" placeholder="Password" class="w-full p-2 border rounded" required />
+      <button type="submit" class="w-full bg-blue-600 text-white p-2 rounded">Sign in</button>
+    </form>
+  </div>
+
+  <div id="admin-area" class="hidden">
+    <div class="flex justify-between items-center mb-6">
+      <h1 class="text-2xl font-bold">Admin Dashboard</h1>
+      <div class="text-sm">Logged in as: <span id="admin-user" class="font-bold"></span> 
+      <button id="btn-logout" class="ml-2 text-red-600 underline">Logout</button></div>
+    </div>
+
+    <div class="bg-white p-6 rounded shadow mb-6 border-t-4 border-blue-600">
+      <div class="flex justify-between items-center mb-4 border-b pb-2">
+        <h3 class="font-bold text-lg text-gray-700">📊 Registered Students & Invoice</h3>
+        <div class="bg-blue-600 text-white px-4 py-1 rounded-full font-black">
+          TOTAL: <span id="total-students-count">0</span>
+        </div>
+      </div>
+      
+      <div id="student-stats-grid" class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6">
+        </div>
+
+      <div class="bg-gray-50 p-4 rounded-xl border border-gray-200">
+        <h4 class="text-sm font-bold text-gray-600 mb-3 uppercase tracking-wider">Generate Developer Invoice</h4>
+        <div class="grid md:grid-cols-4 gap-4">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Rate Per Child (₦)</label>
+            <input id="inv-rate" type="number" placeholder="e.g. 500" class="w-full p-2 border rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Bank Name</label>
+            <input id="inv-bank" type="text" placeholder="e.g. Zenith Bank" class="w-full p-2 border rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Account Number</label>
+            <input id="inv-acc-num" type="text" placeholder="0123456789" class="w-full p-2 border rounded text-sm">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">Account Name</label>
+            <input id="inv-acc-name" type="text" placeholder="Your Full Name" class="w-full p-2 border rounded text-sm">
+          </div>
+        </div>
+        <button id="btn-print-invoice" class="mt-4 w-full md:w-auto bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-6 rounded-lg transition shadow-md flex items-center justify-center gap-2">
+          <span>🖨️</span> Generate & Print Invoice
+        </button>
+      </div>
+    </div>
+
+    <div class="grid md:grid-cols-4 gap-6">
+      <div class="bg-white p-6 rounded shadow">
+        <h3 class="font-bold mb-4 border-b pb-2">👨‍🏫 Add New Teacher</h3>
+        <div class="space-y-3">
+          <input id="teacher-name" placeholder="Full Name" class="w-full p-2 border rounded" />
+          <input id="teacher-email" placeholder="Email Address" class="w-full p-2 border rounded" />
+          <button id="add-teacher-btn" class="w-full bg-green-600 text-white p-2 rounded">Create Teacher Account</button>
+          <div id="teacher-msg" class="text-sm mt-2"></div>
+        </div>
+        <h4 class="font-bold mt-6 mb-2">Existing Teachers</h4>
+        <div id="teachers-list" class="space-y-2 max-h-40 overflow-y-auto"></div>
+      </div>
+
+      <div class="bg-white p-6 rounded shadow border-l-4 border-red-600">
+        <h3 class="font-bold mb-4 border-b pb-2">🏆 Publish & Rank Results</h3>
+        <p class="text-xs text-gray-500 mb-4">Calculates positions (1st, 2nd...) based on total scores and publishes results.</p>
+        
+        <div class="space-y-3">
+          <select id="rank-class" class="w-full p-3 border rounded bg-gray-50 font-bold">
+            <option value="">-- Select Class --</option>
+            <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+            <option>Basic 2</option><option>Basic 3</option>
+            <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+            <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+          </select>
+          
+          <select id="rank-term" class="w-full p-3 border rounded bg-gray-50">
+            <option value="">-- Select Term --</option>
+            <option value="1">1st Term</option>
+            <option value="2">2nd Term</option>
+            <option value="3">3rd Term</option>
+          </select>
+          
+          <select id="rank-session" class="w-full p-3 border rounded bg-gray-50">
+            <option value="">-- Select Session --</option>
+            <option value="2025/2026" selected>2025/2026</option>
+            <option value="2024/2025">2024/2025</option>
+            <option value="2025">2025</option>
+          </select>
+
+          <button id="rankBtn" class="w-full bg-red-600 hover:bg-red-700 text-white font-bold p-3 rounded transition">
+            Assign Positions & Publish
+          </button>
+          <div id="rank-msg" class="text-center text-sm font-semibold mt-2"></div>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded shadow border-l-4 border-green-500">
+        <h3 class="font-bold mb-4 border-b pb-2">💳 Bulk Clear Fees</h3>
+        <p class="text-xs text-gray-500 mb-4">Clears school fees for all students in a specific class, term, and session.</p>
+        
+        <div class="space-y-3">
+          <select id="fee-class" class="w-full p-3 border rounded bg-gray-50 font-bold">
+            <option value="">-- Select Class --</option>
+            <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+            <option>Basic 2</option><option>Basic 3</option>
+            <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+            <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+          </select>
+          
+          <select id="fee-term" class="w-full p-3 border rounded bg-gray-50">
+            <option value="">-- Select Term --</option>
+            <option value="1">1st Term</option>
+            <option value="2">2nd Term</option>
+            <option value="3">3rd Term</option>
+          </select>
+          
+          <select id="fee-session" class="w-full p-3 border rounded bg-gray-50">
+            <option value="">-- Select Session --</option>
+            <option value="2025/2026" selected>2025/2026</option>
+            <option value="2024/2025">2024/2025</option>
+            <option value="2025">2025</option>
+          </select>
+
+          <button id="clearFeesBtn" class="w-full bg-green-600 hover:bg-green-700 text-white font-bold p-3 rounded transition">
+            Clear Fees for Class
+          </button>
+          <div id="fee-msg" class="text-center text-sm font-semibold mt-2"></div>
+        </div>
+      </div>
+
+      <div class="bg-white p-6 rounded shadow border-l-4 border-orange-600">
+        <h3 class="font-bold mb-4 border-b pb-2">🔄 Data Migration Tool</h3>
+        <p class="text-xs text-gray-500 mb-4">Consolidate student records across sessions.</p>
+        
+        <div class="space-y-3">
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">From Session</label>
+            <input id="from-session" type="text" placeholder="e.g. 2024/2025" class="w-full p-3 border rounded bg-gray-50">
+          </div>
+          <div>
+            <label class="block text-xs font-bold text-gray-500 mb-1">To Session</label>
+            <input id="to-session" type="text" placeholder="e.g. 2025/2026" class="w-full p-3 border rounded bg-gray-50">
+          </div>
+
+          <button id="migrateBtn" class="w-full bg-orange-600 hover:bg-orange-700 text-white font-bold p-3 rounded transition">
+            🔄 Migrate Records
+          </button>
+          <div id="migrate-msg" class="text-center text-sm font-semibold mt-2"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</body>
+</html>

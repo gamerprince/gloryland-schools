@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fee Structure Setup — Bursary</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20">
+
+<nav class="bg-indigo-800 text-white p-4 flex justify-between items-center shadow-md">
+  <span class="font-black tracking-tight">FEE STRUCTURE SETUP</span>
+  <a href="bursary-dashboard.html" class="text-sm hover:underline">Back to Dashboard</a>
+</nav>
+
+<div class="max-w-4xl mx-auto px-4 mt-10">
+  <div class="bg-white p-8 rounded-2xl shadow-lg border border-indigo-100">
+    
+    <div class="mb-8 border-b pb-6">
+      <h2 class="text-2xl font-black text-gray-800 mb-2">Automated Fee Templates</h2>
+      <p class="text-gray-500 text-sm">Select a class and define the default fees. These will automatically pre-fill during Daily Cash Entry.</p>
+    </div>
+
+    <div class="mb-8">
+      <label class="block text-sm font-bold text-gray-700 uppercase mb-2">1. Select Class to Configure</label>
+      <select id="setup-class" class="w-full p-4 border-2 border-indigo-200 rounded-xl bg-indigo-50 font-bold text-indigo-900 outline-none focus:border-indigo-500 transition-colors">
+        <option value="">-- Choose a Class --</option>
+        <option>Daycare</option>
+        <option>Kindergarten 1 (KG1)</option>
+        <option>Kindergarten 2 (KG2)</option>
+        <option>Nursery 1</option><option>Nursery 2</option><option>Nursery 3</option>
+        <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+        <option>Basic 2</option><option>Basic 3</option>
+        <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+        <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+      </select>
+    </div>
+
+    <div id="fee-inputs-container" class="hidden">
+      <label class="block text-sm font-bold text-gray-700 uppercase mb-4">2. Enter Default Amounts (₦)</label>
+      <p class="text-xs text-gray-400 mb-6 italic">Leave blank if the fee does not apply to this class.</p>
+      
+      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="fee-grid">
+        </div>
+
+      <button id="btn-save-setup" class="w-full bg-indigo-600 text-white font-black py-4 mt-8 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition">
+        SAVE CLASS FEE STRUCTURE
+      </button>
+      
+      <div class="mt-10 pt-6 border-t border-indigo-100">
+        <h3 class="font-black text-indigo-800 uppercase text-sm mb-4">Policy Settings</h3>
+        <div class="bg-indigo-50 p-4 rounded-xl">
+          <label class="block text-xs font-bold text-indigo-600 uppercase mb-1">4th Child Tuition Discount (₦)</label>
+          <input id="discount-4th" type="number" class="w-full p-3 border-2 border-indigo-200 rounded-lg" placeholder="e.g. 50000">
+        </div>
+      </div>
+      <div id="msg" class="text-center font-bold mt-4"></div>
+    </div>
+
+  </div>
+</div>
+
+<script type="module">
+import { db } from "./firebase-config.js";
+import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+
+const feeCategories = [
+  { id: "development", label: "Development Fees" }, { id: "exam", label: "Exam Fees" },
+  { id: "medical", label: "Medical Fees" }, { id: "maintenance", label: "Maintenance Fees" },
+  { id: "schoolFees", label: "School Fees" }, { id: "lesson", label: "Lesson Fees" },
+  { id: "pta", label: "PTA" }, { id: "bookPack", label: "Book Pack" },
+  { id: "uniform", label: "Uniform" }, { id: "sportswear", label: "Sportswear" },
+  { id: "cardigan", label: "Cardigan" }, { id: "phonics", label: "Phonics/French Fees" },
+  { id: "cbt", label: "CBT Fees" }, { id: "robotics", label: "Robotics & Coding Fees" },
+  { id: "excursion", label: "Excursion / Extra Curr." }
+];
+
+// Generate inputs
+const grid = $("fee-grid");
+feeCategories.forEach(fee => {
+  grid.innerHTML += `
+    <div class="bg-gray-50 p-3 border rounded-lg flex justify-between items-center">
+      <label class="text-xs font-bold text-gray-600 truncate w-1/2">${fee.label}</label>
+      <input type="number" id="setup-${fee.id}" placeholder="0" class="w-1/2 p-2 border-b-2 border-indigo-300 text-right text-sm font-bold bg-white outline-none focus:border-indigo-600 rounded">
+    </div>
+  `;
+});
+
+// Load existing setup when class is chosen
+async function handleSetupClassChange(e) {
+  const className = e?.target?.value || $("setup-class").value;
+  const container = $("fee-inputs-container");
+  if (!className) { container.classList.add("hidden"); return; }
+  container.classList.remove("hidden");
+  $("msg").textContent = "Loading existing setup...";
+  $("msg").className = "text-center text-sm text-gray-500 mt-4";
+  feeCategories.forEach(f => { const el = $(`setup-${f.id}`); if (el) el.value = ""; });
+  try {
+    const docSnap = await getDoc(doc(db, "feeTemplates", className));
+    if (docSnap.exists()) {
+      const savedFees = docSnap.data().fees || {};
+      for (const [id, amt] of Object.entries(savedFees)) {
+        if ($(`setup-${id}`)) $(`setup-${id}`).value = amt;
+      }
+      $("msg").textContent = "✅ Existing setup loaded.";
+    } else {
+      $("msg").textContent = "No existing setup found. Enter new values.";
+    }
+  } catch (err) {
+    console.error(err);
+    $("msg").textContent = "Error loading data.";
+  }
+}
+
+// Attach both change event and onchange for compatibility
+const setupClassEl = $("setup-class");
+if (setupClassEl) {
+  setupClassEl.addEventListener("change", handleSetupClassChange);
+  setupClassEl.onchange = handleSetupClassChange;
+}
+
+// Save new setup
+$("btn-save-setup").onclick = async () => {
+  const className = $("setup-class").value;
+  const btn = $("btn-save-setup");
+  
+  const feesToSave = {};
+  feeCategories.forEach(f => {
+    const amt = Number($(`setup-${f.id}`).value);
+    if (amt > 0) feesToSave[f.id] = amt;
+  });
+
+  try {
+    btn.textContent = "⏳ SAVING...";
+    btn.disabled = true;
+    
+    await setDoc(doc(db, "feeTemplates", className), {
+      className: className,
+      fees: feesToSave,
+      updatedAt: serverTimestamp()
+    });
+    // Save policy settings
+    const discountVal = Number($("discount-4th").value) || 0;
+    await setDoc(doc(db, "settings", "feePolicy"), {
+      fourthChildDiscount: discountVal,
+      updatedAt: serverTimestamp()
+    });
+    
+    $("msg").textContent = `✅ Successfully saved structure for ${className}`;
+    $("msg").className = "text-center font-black text-green-600 mt-4 text-lg";
+  } catch (err) {
+    $("msg").textContent = "❌ Error: " + err.message;
+  } finally {
+    btn.textContent = "SAVE CLASS FEE STRUCTURE";
+    btn.disabled = false;
+  }
+};
+</script>
+</body>
+</html>

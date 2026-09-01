@@ -1,0 +1,55 @@
+<!-- teacher-login.html -->
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Teacher Login — Portal</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50 text-gray-800">
+  <div class="max-w-md mx-auto px-6 py-20">
+    <div class="bg-white p-6 rounded shadow">
+      <h1 class="text-2xl font-bold mb-4 text-blue-700">Teacher Login</h1>
+
+      <form id="loginForm" class="space-y-3">
+        <input id="email" type="email" placeholder="Email" class="w-full p-2 border rounded" required />
+        <input id="password" type="password" placeholder="Password" class="w-full p-2 border rounded" required />
+        <button class="w-full bg-blue-600 text-white p-2 rounded" type="submit">Sign in</button>
+      </form>
+
+      <p class="text-sm text-gray-500 mt-3">If you don't have an account ask admin to add you as a teacher.</p>
+      <p class="text-sm mt-2"><a href="teacher-forgot-password.html" class="text-blue-600 hover:underline">Forgot your password?</a></p>
+      <p class="mt-4 text-sm"><a href="portal.html" class="text-blue-600 hover:underline">← Back to Portal</a></p>
+    </div>
+  </div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+
+const $ = id => document.getElementById(id);
+$('loginForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const email = $('email').value.trim();
+  const pw = $('password').value;
+  try {
+    const cred = await signInWithEmailAndPassword(auth, email, pw);
+    const uid = cred.user.uid;
+    // Check teachers collection: document id must be UID
+    const tdoc = await getDoc(doc(db, 'teachers', uid));
+    if (!tdoc.exists()) {
+      alert('Access denied: you are not marked as a teacher. Contact admin.');
+      await auth.signOut();
+      return;
+    }
+    // Success: redirect to dashboard
+    window.location.href = 'teacher-dashboard.html';
+  } catch (err) {
+    alert('Login failed: ' + err.message);
+  }
+});
+</script>
+</body>
+</html>

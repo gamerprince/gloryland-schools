@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Write Exam — Gloryland Academy</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Makes radio buttons easier to tap on mobile */
+    input[type="radio"] {
+      width: 1.2rem;
+      height: 1.2rem;
+      cursor: pointer;
+    }
+  </style>
+</head>
+
+<body class="bg-gray-100 p-4 md:p-10">
+
+<div class="max-w-3xl mx-auto">
+  <header class="mb-6 flex justify-between items-center bg-white p-4 rounded-lg shadow-sm">
+    <h2 class="text-xl font-bold text-blue-800">Student Exam Portal</h2>
+    <div id="user-info" class="text-sm text-gray-600"></div>
+  </header>
+
+  <div id="exam" class="space-y-4">
+    <div class="text-center py-10">⏳ Loading exam questions...</div>
+  </div>
+
+  <div class="mt-8 p-4 bg-white rounded-lg shadow-md border-t-4 border-green-500">
+    <p class="text-sm text-gray-500 mb-4 text-center">Ensure you have answered all questions before submitting.</p>
+    <button id="submit" class="w-full py-4 bg-green-600 hover:bg-green-700 text-white font-bold text-lg rounded-xl shadow-lg transition-transform active:scale-95">
+      SUBMIT EXAM
+    </button>
+  </div>
+</div>
+
+<script type="module">
+import { db, auth } from "./firebase-config.js";
+import {
+  collection,
+  getDocs,
+  doc,
+  getDoc,
+  addDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const params = new URLSearchParams(window.location.search);
+const testId = params.get("testId");
+const examDiv = document.getElementById("exam");
+const answers = {};
+window.answers = answers; 
+
+onAuthStateChanged(auth, async (user) => {
+  if (!user || !testId) {
+    window.location.href = "student.html";
+    return;
+  }
+  
+  document.getElementById('user-info').textContent = user.email;
+
+  try {
+    const testRef = doc(db, "tests", testId);
+    const testSnap = await getDoc(testRef);
+
+    if (!testSnap.exists()) {
+      examDiv.innerHTML = "<div class='p-4 bg-red-100 text-red-700 rounded'>Exam not found.</div>";
+      return;
+    }
+
+    const questionsSnap = await getDocs(
+      collection(db, "tests", testId, "questions")
+    );
+
+    if (questionsSnap.empty) {
+      examDiv.innerHTML = "<div class='p-4 bg-yellow-100 text-yellow-700 rounded'>No questions set for this exam.</div>";
+      return;
+    }
+
+    examDiv.innerHTML = ""; 
+    let count = 1;
+
+    questionsSnap.forEach(qDoc => {
+      const q = qDoc.data();
+      
+      // FIX: Check for 'text' (used in teacher portal) and fallback to 'questionText'
+      const questionText = q.text || q.questionText || "⚠️ Question text missing";
+      const options = Array.isArray(q.options) ? q.options : [];
+
+      const block = document.createElement("div");
+      block.className = "p-5 bg-white rounded-xl border border-gray-200 shadow-sm";
+
+      let optionsHTML = "";
+      options.forEach((opt) => {
+        optionsHTML += `
+          <label class="flex items-center space-x-3 p-3 mt-2 rounded-lg border border-gray-100 hover:bg-blue-50 cursor-pointer transition-colors">
+            <input
+              type="radio"
+              name="q_${qDoc.id}"
+              value="${opt}"
+              onchange="window.answers['${qDoc.id}'] = this.value"
+              class="accent-blue-600"
+            >
+            <span class="text-gray-700 font-medium">${opt}</span>
+          </label>
+        `;
+      });
+
+      block.innerHTML = `
+        <p class="font-bold text-lg text-gray-800 mb-3">${count}. ${questionText}</p>
+        <div class="space-y-1">
+          ${optionsHTML || "<p class='text-red-500 text-sm'>No options found for this question</p>"}
+        </div>
+      `;
+
+      examDiv.appendChild(block);
+      count++;
+    });
+
+  } catch (error) {
+    console.error("Error loading exam:", error);
+    examDiv.innerHTML = "Error loading exam questions. Please refresh.";
+  }
+});
+
+/* ===============================
+    FIXED SUBMIT LOGIC
+================================ */
+document.getElementById("submit").onclick = async () => {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const submitBtn = document.getElementById("submit");
+  submitBtn.disabled = true;
+  submitBtn.innerHTML = "Grading...";
+
+  try {
+    // 1. Fetch the actual questions to get the Correct Letter (A, B, C, or D)
+    const qSnap = await getDocs(collection(db, "tests", testId, "questions"));
+    let totalQuestions = qSnap.size;
+    let correctCount = 0;
+
+    qSnap.forEach((doc) => {
+      const questionData = doc.data();
+      const questionId = doc.id;
+      
+      // This is the full text the student clicked (e.g., "is")
+      const studentSelectedText = window.answers[questionId]; 
+      
+      // This is the letter the teacher saved (e.g., "A")
+      const correctLetter = questionData.answer ? questionData.answer.trim().toUpperCase() : "";
+
+      // We need to find which letter corresponds to the text the student clicked
+      const options = questionData.options || [];
+      // String.fromCharCode(65 + i) turns 0 into A, 1 into B, etc.
+      const studentSelectedLetter = options.map((opt, i) => 
+        opt === studentSelectedText ? String.fromCharCode(65 + i) : null
+      ).find(letter => letter !== null);
+
+      if (studentSelectedLetter === correctLetter) {
+        correctCount++;
+      }
+    });
+
+    const scorePercentage = totalQuestions > 0 ? Math.round((correctCount / totalQuestions) * 100) : 0;
+
+    // 2. Get student name for the teacher's view
+    const studentDoc = await getDoc(doc(db, "students", user.uid));
+    const studentName = studentDoc.exists() ? studentDoc.data().name : "Unknown Student";
+
+    // 3. Save to 'attempts' collection
+    await addDoc(collection(db, "attempts"), {
+      studentId: user.uid,
+      studentName: studentName,
+      studentEmail: user.email,
+      testId: testId,
+      correct: correctCount,
+      total: totalQuestions,
+      score: scorePercentage, 
+      submittedAt: serverTimestamp(),
+      status: "completed"
+    });
+
+    alert(`Exam Finished!\nScore: ${scorePercentage}%\nCorrect: ${correctCount}/${totalQuestions}`);
+    window.location.href = "student.html";
+
+  } catch (err) {
+    console.error(err);
+    alert("Submission Error: " + err.message);
+    submitBtn.disabled = false;
+    submitBtn.innerHTML = "SUBMIT EXAM";
+  }
+};
+</script>
+
+</body>
+</html>

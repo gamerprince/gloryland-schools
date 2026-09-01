@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>Manage Student Results</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100">
+
+<nav class="bg-gray-900 text-white p-3 flex gap-4">
+  <a href="admin.html">Dashboard</a>
+  <a href="admin-results.html">Manage Results</a>
+  <a href="admin-broadsheet.html">Broadsheet</a>
+</nav>
+
+<div class="max-w-4xl mx-auto p-6">
+  <h1 class="text-2xl font-bold mb-4">Manage Student Results</h1>
+
+  <div class="bg-white p-4 rounded shadow mb-6 flex gap-4 flex-wrap">
+    <select id="filterClass" class="border p-2 rounded">
+      <option value="">-- Select Class --</option>
+      <option>Basic 1 Onyx</option><option>Basic 1 Gold</option>
+      <option>Basic 2</option><option>Basic 3</option>
+      <option>Basic 4</option><option>Basic 5</option><option>Basic 6</option>
+      <option>JSS 1</option><option>JSS 2</option><option>JSS 3</option>
+    </select>
+    <select id="filterTerm" class="border p-2 rounded">
+      <option value="1">1st Term</option>
+      <option value="2">2nd Term</option>
+      <option value="3">3rd Term</option>
+    </select>
+    <button id="loadBtn" class="bg-blue-600 text-white px-6 py-2 rounded font-bold">Load Students</button>
+  </div>
+
+  <div id="list" class="space-y-3">
+    <p class="text-gray-500 italic">Select a class and term above to see students.</p>
+  </div>
+</div>
+
+<script type="module">
+import { auth, db } from "./firebase-config.js";
+import { collection, getDocs, query, where, writeBatch, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+
+const list = document.getElementById("list");
+
+onAuthStateChanged(auth, user => {
+  if (!user) window.location.href = "admin.html";
+});
+
+document.getElementById("loadBtn").onclick = async () => {
+  const className = document.getElementById("filterClass").value;
+  const term = Number(document.getElementById("filterTerm").value);
+
+  if (!className) return alert("Please select a class");
+
+  list.innerHTML = "Loading...";
+  
+  const q = query(collection(db, "compiledResults"), 
+    where("className", "==", className), 
+    where("term", "==", term)
+  );
+
+  const snap = await getDocs(q);
+  if (snap.empty) {
+    list.innerHTML = "No results found.";
+    return;
+  }
+
+  // Group by Student
+  const students = {};
+  snap.forEach(d => {
+    const data = d.data();
+    if (!students[data.studentName]) {
+      students[data.studentName] = {
+        name: data.studentName,
+        ids: [],
+        feeCleared: data.feeCleared, // Assume all same, but we update all anyway
+        published: data.published
+      };
+    }
+    students[data.studentName].ids.push(d.id);
+  });
+
+  list.innerHTML = "";
+  
+  Object.values(students).forEach(s => {
+    const card = document.createElement("div");
+    card.className = "bg-white p-4 rounded shadow flex justify-between items-center";
+    
+    card.innerHTML = `
+      <div>
+        <div class="font-bold text-lg">${s.name}</div>
+        <div class="text-sm text-gray-600">${s.ids.length} Subjects Entered</div>
+        <div class="text-xs mt-1">
+          <span class="${s.feeCleared ? 'text-green-600 font-bold' : 'text-red-600 font-bold'}">
+            ${s.feeCleared ? 'FEE CLEARED' : 'FEE OWED'}
+          </span>
+        </div>
+      </div>
+    `;
+
+    const btnGroup = document.createElement("div");
+    btnGroup.className = "flex gap-2";
+
+    // Toggle Fee Button
+    const feeBtn = document.createElement("button");
+    feeBtn.className = s.feeCleared ? "bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm" : "bg-green-600 text-white px-3 py-1 rounded text-sm";
+    feeBtn.innerText = s.feeCleared ? "Block Fees" : "Clear Fees";
+    feeBtn.onclick = () => updateStudentStatus(s, "feeCleared", !s.feeCleared);
+
+    // Toggle Publish Button
+    const pubBtn = document.createElement("button");
+    pubBtn.className = s.published ? "bg-gray-200 text-gray-700 px-3 py-1 rounded text-sm" : "bg-blue-600 text-white px-3 py-1 rounded text-sm";
+    pubBtn.innerText = s.published ? "Unpublish" : "Publish";
+    pubBtn.onclick = () => updateStudentStatus(s, "published", !s.published);
+
+    btnGroup.appendChild(feeBtn);
+    btnGroup.appendChild(pubBtn);
+    card.appendChild(btnGroup);
+    list.appendChild(card);
+  });
+};
+
+async function updateStudentStatus(student, field, newValue) {
+  if (!confirm(`Change ${field} for ${student.name}?`)) return;
+  
+  const batch = writeBatch(db);
+  student.ids.forEach(id => {
+    batch.update(doc(db, "compiledResults", id), { [field]: newValue });
+  });
+
+  await batch.commit();
+  alert("Updated!");
+  document.getElementById("loadBtn").click(); // Refresh list
+}
+</script>
+</body>
+</html>

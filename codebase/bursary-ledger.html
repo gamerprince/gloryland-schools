@@ -21,15 +21,11 @@
       font-size: 18px;
       padding: 22px 16px;
     }
-    /* Highlight total column */
-    td:nth-child(4) {
+    .ledger-plan-total {
       background: #f0fdf4;
       font-weight: 800;
       color: #15803d;
       font-size: 22px;
-    }
-    th:nth-child(4) {
-      background: #dcfce7;
     }
     /* Mobile optimization for the container */
     .table-container {
@@ -47,7 +43,7 @@
       th {
         font-size: 20px;
       }
-      td:nth-child(4) {
+      .ledger-plan-total {
         font-size: 26px;
       }
     }
@@ -100,7 +96,8 @@
         <tr>
           <th class="sticky left-0 bg-gray-100 z-10 w-12 text-center">S/N</th>
           <th class="sticky left-12 bg-gray-100 z-10">Student Name</th>
-          <th>Bal Last Term</th>
+          <th>Class Plan Total</th>
+          <th id="ledger-bal-header">Bal Last Term</th>
           <th>Current Fees</th>
           <th class="bg-green-50">Total Owed</th>
           <th>1st Pay</th>
@@ -119,23 +116,63 @@
 
 <script type="module">
   import { db } from './firebase-config.js';
-  import { collection, getDocs, query, where, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { collection, getDocs, query, where, deleteDoc, doc, getDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
   if (sessionStorage.getItem('bursaryAccess') !== 'true') window.location.href = 'bursary-login.html';
+
+  const defaultFeeCategories = [
+    { id: "development", label: "Development Fees" }, { id: "exam", label: "Exam Fees" },
+    { id: "medical", label: "Medical Fees" }, { id: "maintenance", label: "Maintenance Fees" },
+    { id: "schoolFees", label: "School Fees" }, { id: "lesson", label: "Lesson Fees" },
+    { id: "pta", label: "PTA" }, { id: "bookPack", label: "Book Pack" },
+    { id: "uniform", label: "Uniform" }, { id: "sportswear", label: "Sportswear" },
+    { id: "cardigan", label: "Cardigan" }, { id: "phonics", label: "Phonics/French Fees" },
+    { id: "cbt", label: "CBT Fees" }, { id: "robotics", label: "Robotics & Coding Fees" },
+    { id: "excursion", label: "Excursion / Extra Curr." }
+  ];
+
+  async function loadFeeCategories() {
+    let saved = [];
+    try {
+      const snap = await getDoc(doc(db, "settings", "bursaryFeeCategories"));
+      saved = snap.exists() && Array.isArray(snap.data().categories) ? snap.data().categories : [];
+    } catch (err) {
+      console.error("Fee categories load error:", err);
+    }
+    const categories = [...defaultFeeCategories];
+    saved.forEach(fee => {
+      if (fee?.id && fee?.label && !categories.some(item => item.id === fee.id)) categories.push(fee);
+    });
+    return categories;
+  }
 
   document.getElementById('load').onclick = async () => {
     const className = document.getElementById('filterClass').value;
     const tbody = document.getElementById('tbody');
-    tbody.innerHTML = '<tr><td colspan="9" class="text-center p-10">Loading...</td></tr>';
+    tbody.innerHTML = '<tr><td colspan="11" class="text-center p-10">Loading...</td></tr>';
 
     try {
       const term = document.getElementById('filterTerm') ? document.getElementById('filterTerm').value : '1st Term';
-      const q = query(collection(db, "bursaryLedgers"), where("className", "==", className), where("term", "==", term));
-      const snap = await getDocs(q);
+      const [categories, templateSnap, snap] = await Promise.all([
+        loadFeeCategories(),
+        getDoc(doc(db, "feeTemplates", className)),
+        getDocs(query(collection(db, "bursaryLedgers"), where("className", "==", className), where("term", "==", term)))
+      ]);
+      const classFees = templateSnap.exists() ? templateSnap.data().fees || {} : {};
+      const planTotal = Object.values(classFees).reduce((sum, amount) => sum + (Number(amount) || 0), 0);
+      const balHeader = document.getElementById("ledger-bal-header");
+      const headerRow = balHeader.parentElement;
+      headerRow.querySelectorAll(".dynamic-plan-fee").forEach(header => header.remove());
+      categories.forEach(fee => {
+        const header = document.createElement("th");
+        header.className = "dynamic-plan-fee";
+        header.textContent = fee.label;
+        headerRow.insertBefore(header, balHeader);
+      });
       tbody.innerHTML = "";
 
       if (snap.empty) {
-        tbody.innerHTML = '<tr><td colspan="9" class="text-center p-10">No records found for this class.</td></tr>';
+        tbody.innerHTML = `<tr><td colspan="${11 + categories.length}" class="text-center p-10">No records found for this class.</td></tr>`;
         return;
       }
 
@@ -143,6 +180,12 @@
       snap.forEach(d => {
         const r = d.data();
         const total = (Number(r.balLastTerm) || 0) + (Number(r.currentFees) || 0);
+        const feeBreakdown = r.feeBreakdown || {};
+        const feeAmounts = Object.fromEntries(categories.map(fee => [
+          fee.id,
+          Number(feeBreakdown[fee.id] ?? classFees[fee.id]) || 0
+        ]));
+        const rowPlanTotal = Object.values(feeAmounts).reduce((sum, amount) => sum + amount, 0);
         
         tbody.innerHTML += `
           <tr>
@@ -150,6 +193,8 @@
             <td class="font-bold sticky left-12 bg-white z-0 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
               ${r.pupilName} <br><span class="text-xs font-normal text-purple-600">${r.regNo || ''}</span>
             </td>
+            <td class="ledger-plan-total">${rowPlanTotal || planTotal}</td>
+            ${categories.map(fee => `<td>${feeAmounts[fee.id] || '-'}</td>`).join('')}
             <td>${r.balLastTerm || 0}</td>
             <td>${r.currentFees || 0}</td>
             <td class="bg-gray-50 font-black">${total}</td>

@@ -37,11 +37,28 @@
     </div>
 
     <div id="fee-inputs-container" class="hidden">
+      <div class="mb-8 p-5 bg-indigo-50 border border-indigo-200 rounded-xl">
+        <label for="copy-class" class="block text-sm font-bold text-indigo-900 uppercase mb-2">Copy fee inputs from another class</label>
+        <div class="flex flex-col sm:flex-row gap-3">
+          <select id="copy-class" class="flex-1 p-3 border-2 border-indigo-200 rounded-lg bg-white font-bold text-gray-700">
+            <option value="">-- Select source class --</option>
+          </select>
+          <button id="btn-copy-class" type="button" class="px-5 py-3 bg-indigo-800 text-white font-bold rounded-lg hover:bg-indigo-900">COPY INPUTS</button>
+        </div>
+        <p class="text-xs text-indigo-700 mt-2">This replaces the amounts shown below. Review them, then save to apply them to the selected class.</p>
+      </div>
+
       <label class="block text-sm font-bold text-gray-700 uppercase mb-4">2. Enter Default Amounts (₦)</label>
       <p class="text-xs text-gray-400 mb-6 italic">Leave blank if the fee does not apply to this class.</p>
       
       <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="fee-grid">
         </div>
+
+      <div class="mt-6 flex flex-col sm:flex-row gap-3">
+        <input id="new-fee-label" type="text" maxlength="40" placeholder="Add fee item (e.g. Friday Wear)" class="flex-1 p-3 border-2 border-gray-200 rounded-lg outline-none focus:border-indigo-500">
+        <button id="btn-add-fee" type="button" class="px-5 py-3 bg-gray-800 text-white font-bold rounded-lg hover:bg-gray-700">ADD FEE ITEM</button>
+      </div>
+      <p class="text-xs text-gray-500 mt-2">Fee items are shared across classes. Enter an amount above for the selected class.</p>
 
       <button id="btn-save-setup" class="w-full bg-indigo-600 text-white font-black py-4 mt-8 rounded-xl shadow-lg hover:bg-indigo-700 active:scale-95 transition">
         SAVE CLASS FEE STRUCTURE
@@ -66,7 +83,7 @@ import { doc, setDoc, getDoc, serverTimestamp } from "https://www.gstatic.com/fi
 
 const $ = id => document.getElementById(id);
 
-const feeCategories = [
+const defaultFeeCategories = [
   { id: "development", label: "Development Fees" }, { id: "exam", label: "Exam Fees" },
   { id: "medical", label: "Medical Fees" }, { id: "maintenance", label: "Maintenance Fees" },
   { id: "schoolFees", label: "School Fees" }, { id: "lesson", label: "Lesson Fees" },
@@ -76,20 +93,74 @@ const feeCategories = [
   { id: "cbt", label: "CBT Fees" }, { id: "robotics", label: "Robotics & Coding Fees" },
   { id: "excursion", label: "Excursion / Extra Curr." }
 ];
+let feeCategories = [...defaultFeeCategories];
 
-// Generate inputs
-const grid = $("fee-grid");
-feeCategories.forEach(fee => {
-  grid.innerHTML += `
-    <div class="bg-gray-50 p-3 border rounded-lg flex justify-between items-center">
-      <label class="text-xs font-bold text-gray-600 truncate w-1/2">${fee.label}</label>
-      <input type="number" id="setup-${fee.id}" placeholder="0" class="w-1/2 p-2 border-b-2 border-indigo-300 text-right text-sm font-bold bg-white outline-none focus:border-indigo-600 rounded">
-    </div>
-  `;
-});
+function renderFeeInputs() {
+  const grid = $("fee-grid");
+  grid.innerHTML = "";
+  feeCategories.forEach(fee => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "bg-gray-50 p-3 border rounded-lg flex justify-between items-center";
+    const label = document.createElement("label");
+    label.className = "text-xs font-bold text-gray-600 truncate w-1/2";
+    label.htmlFor = `setup-${fee.id}`;
+    label.textContent = fee.label;
+    const input = document.createElement("input");
+    input.type = "number";
+    input.id = `setup-${fee.id}`;
+    input.placeholder = "0";
+    input.className = "w-1/2 p-2 border-b-2 border-indigo-300 text-right text-sm font-bold bg-white outline-none focus:border-indigo-600 rounded";
+    wrapper.append(label, input);
+    grid.appendChild(wrapper);
+  });
+}
+
+function makeFeeId(label) {
+  return label.trim().toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+}
+
+async function loadFeeCategories() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "bursaryFeeCategories"));
+    const saved = snap.exists() && Array.isArray(snap.data().categories) ? snap.data().categories : [];
+    const categories = [...defaultFeeCategories];
+    saved.forEach(fee => {
+      if (fee?.id && fee?.label && !categories.some(item => item.id === fee.id)) categories.push(fee);
+    });
+    feeCategories = categories;
+  } catch (err) {
+    console.error("Fee categories load error:", err);
+  }
+  renderFeeInputs();
+}
+
+$("btn-add-fee").onclick = async () => {
+  await feeCategoriesReady;
+  const label = $("new-fee-label").value.trim();
+  const id = makeFeeId(label);
+  if (!id) return alert("Enter a fee item name.");
+  if (feeCategories.some(fee => fee.id === id || fee.label.toLowerCase() === label.toLowerCase())) {
+    return alert("That fee item already exists.");
+  }
+
+  feeCategories.push({ id, label });
+  try {
+    await setDoc(doc(db, "settings", "bursaryFeeCategories"), {
+      categories: feeCategories,
+      updatedAt: serverTimestamp()
+    });
+    $("new-fee-label").value = "";
+    renderFeeInputs();
+    await handleSetupClassChange();
+  } catch (err) {
+    feeCategories.pop();
+    alert("Unable to add fee item: " + err.message);
+  }
+};
 
 // Load existing setup when class is chosen
 async function handleSetupClassChange(e) {
+  await feeCategoriesReady;
   const className = e?.target?.value || $("setup-class").value;
   const container = $("fee-inputs-container");
   if (!className) { container.classList.add("hidden"); return; }
@@ -114,16 +185,68 @@ async function handleSetupClassChange(e) {
   }
 }
 
+function populateCopyClassOptions() {
+  const target = $("setup-class");
+  const source = $("copy-class");
+  source.innerHTML = '<option value="">-- Select source class --</option>';
+  [...target.options].forEach(option => {
+    if (!option.value || option.value === target.value) return;
+    const sourceOption = document.createElement("option");
+    sourceOption.value = option.value;
+    sourceOption.textContent = option.textContent;
+    source.appendChild(sourceOption);
+  });
+}
+
+$("btn-copy-class").onclick = async () => {
+  await feeCategoriesReady;
+  const targetClass = $("setup-class").value;
+  const sourceClass = $("copy-class").value;
+  if (!targetClass) return alert("Select the class you want to configure first.");
+  if (!sourceClass) return alert("Select a source class to copy from.");
+  if (sourceClass === targetClass) return alert("Choose a different source class.");
+
+  const btn = $("btn-copy-class");
+  btn.disabled = true;
+  btn.textContent = "COPYING...";
+  try {
+    const sourceSnap = await getDoc(doc(db, "feeTemplates", sourceClass));
+    if (!sourceSnap.exists()) {
+      $("msg").textContent = `No fee setup exists for ${sourceClass}.`;
+      $("msg").className = "text-center font-bold text-amber-700 mt-4";
+      return;
+    }
+
+    const sourceFees = sourceSnap.data().fees || {};
+    feeCategories.forEach(fee => {
+      const input = $(`setup-${fee.id}`);
+      if (input) input.value = sourceFees[fee.id] ?? "";
+    });
+    $("msg").textContent = `Inputs copied from ${sourceClass}. Review and save to apply them to ${targetClass}.`;
+    $("msg").className = "text-center font-bold text-green-700 mt-4";
+  } catch (err) {
+    $("msg").textContent = "Unable to copy class inputs: " + err.message;
+    $("msg").className = "text-center font-bold text-red-600 mt-4";
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "COPY INPUTS";
+  }
+};
+
 // Attach both change event and onchange for compatibility
 const setupClassEl = $("setup-class");
 if (setupClassEl) {
-  setupClassEl.addEventListener("change", handleSetupClassChange);
-  setupClassEl.onchange = handleSetupClassChange;
+  setupClassEl.addEventListener("change", (event) => {
+    populateCopyClassOptions();
+    handleSetupClassChange(event);
+  });
 }
 
 // Save new setup
 $("btn-save-setup").onclick = async () => {
+  await feeCategoriesReady;
   const className = $("setup-class").value;
+  if (!className) return alert("Select a class first.");
   const btn = $("btn-save-setup");
   
   const feesToSave = {};
@@ -157,6 +280,8 @@ $("btn-save-setup").onclick = async () => {
     btn.disabled = false;
   }
 };
+
+const feeCategoriesReady = loadFeeCategories();
 </script>
 </body>
 </html>

@@ -365,7 +365,8 @@ let cashAnalysisFilterName = '';
 async function loadCashAnalysis() {
   const tbody = $("cash-tbody");
   if (!tbody) return;
-  tbody.innerHTML = "<tr><td colspan='22' class='p-4 text-center'>Loading...</td></tr>";
+  await feeCategoriesReady;
+  tbody.innerHTML = `<tr><td colspan='${6 + getCashFeeColumns().length}' class='p-4 text-center'>Loading...</td></tr>`;
   try {
     const q = query(collection(db, "cashAnalysis"), orderBy("timestamp", "desc"));
     const snap = await getDocs(q);
@@ -406,9 +407,35 @@ function populateCashAnalysisClassFilter() {
   classSelect.value = currentValue;
 }
 
+function getCashFeeColumns() {
+  const columns = new Map(feeCategories.map(fee => [fee.id, fee.label]));
+  allCashAnalysisRecords.forEach(record => {
+    Object.keys(record.fees || {}).forEach(id => {
+      if (!columns.has(id)) columns.set(id, record.feeLabels?.[id] || id.replace(/[-_]/g, " "));
+    });
+  });
+  return [...columns].map(([id, label]) => ({ id, label }));
+}
+
+function renderCashAnalysisHeaders(columns) {
+  const totalHeader = $("cash-total-header");
+  if (!totalHeader) return;
+  const row = totalHeader.parentElement;
+  row.querySelectorAll(".dynamic-fee-heading").forEach(header => header.remove());
+  columns.forEach(fee => {
+    const header = document.createElement("th");
+    header.className = "dynamic-fee-heading";
+    header.textContent = fee.label;
+    row.insertBefore(header, totalHeader);
+  });
+}
+
 function renderCashAnalysisTable() {
   const tbody = $("cash-tbody");
   if (!tbody) return;
+  const feeColumns = getCashFeeColumns();
+  renderCashAnalysisHeaders(feeColumns);
+  const columnCount = 6 + feeColumns.length;
   
   // Filter records based on current filter states
   let filtered = allCashAnalysisRecords.filter(r => {
@@ -421,7 +448,7 @@ function renderCashAnalysisTable() {
   tbody.innerHTML = "";
   
   if (filtered.length === 0) {
-    tbody.innerHTML = "<tr><td colspan='22' class='p-4 text-center text-gray-400'>No records match your filters</td></tr>";
+    tbody.innerHTML = `<tr><td colspan='${columnCount}' class='p-4 text-center text-gray-400'>No records match your filters</td></tr>`;
     return;
   }
   
@@ -432,7 +459,7 @@ function renderCashAnalysisTable() {
     const verifiedBadge = r.verified ? '<span class="inline-block bg-green-500 text-white text-[10px] font-black px-2 py-1 rounded ml-1">✓ VERIFIED</span>' : '';
     let row = `\n        <tr class="border-b ${r.verified ? 'bg-green-50' : ''}">\n          <td>${++i}</td>\n          <td class="sticky left-0 ${r.verified ? 'bg-green-50' : 'bg-white'} font-bold">${r.studentName}${fourthChildBadge}${verifiedBadge}</td>\n          <td>${r.is4thChild ? '✓' : ''}</td>\n          <td>${r.className || ''}</td>`;
     // iterate categories in the same order as feeCategories array
-    feeCategories.forEach(fc => {
+    feeColumns.forEach(fc => {
       row += `<td>${val(r.fees?.[fc.id])}</td>`;
     });
     row += `\n          <td class="bg-blue-50">₦${val(r.totalAmount)}</td>\n          <td><button class="action-btn ${r.verified ? 'bg-gray-300' : 'bg-orange-500'} text-white text-[10px] font-bold px-2 py-1 rounded hover:${r.verified ? 'bg-gray-400' : 'bg-orange-600'} transition" data-id="${r.id}" data-verified="${r.verified || false}" onclick="openActionMenu('${r.id}')">⋮</button></td>\n        </tr>`;
@@ -570,7 +597,7 @@ if (btn4thChild) {
   });
 }
 
-const feeCategories = [
+const defaultFeeCategories = [
   { id: "development", label: "Development Fees" }, { id: "exam", label: "Exam Fees" },
   { id: "medical", label: "Medical Fees" }, { id: "maintenance", label: "Maintenance Fees" },
   { id: "schoolFees", label: "School Fees" }, { id: "lesson", label: "Lesson Fees" },
@@ -580,37 +607,67 @@ const feeCategories = [
   { id: "cbt", label: "CBT Fees" }, { id: "robotics", label: "Robotics & Coding Fees" },
   { id: "excursion", label: "Excursion / Extra Curr." }
 ];
+let feeCategories = [...defaultFeeCategories];
 
-if($("fee-grid")) {
-  feeCategories.forEach(f => {
-    const div = document.createElement('div');
-    div.className = "flex items-center justify-between bg-white p-2 border rounded text-xs";
-    div.innerHTML = `
-      <label class="flex items-center gap-2 w-full"><input type="checkbox" class="fee-tick" value="${f.id}" data-target="amt-${f.id}"> ${f.label}</label>
-      <input type="number" id="amt-${f.id}" placeholder="0" class="hidden w-20 p-1 border-b text-right outline-none">`;
-    $("fee-grid").appendChild(div);
+function renderFeeInputs() {
+  const grid = $("fee-grid");
+  if (!grid) return;
+  grid.innerHTML = "";
+  feeCategories.forEach(fee => {
+    const wrapper = document.createElement("div");
+    wrapper.className = "flex items-center justify-between bg-white p-2 border rounded text-xs";
+    const label = document.createElement("label");
+    label.className = "flex items-center gap-2 w-full";
+    const checkbox = document.createElement("input");
+    checkbox.type = "checkbox";
+    checkbox.className = "fee-tick";
+    checkbox.value = fee.id;
+    checkbox.dataset.target = `amt-${fee.id}`;
+    const labelText = document.createElement("span");
+    labelText.textContent = fee.label;
+    label.append(checkbox, labelText);
+    const input = document.createElement("input");
+    input.type = "number";
+    input.id = `amt-${fee.id}`;
+    input.placeholder = "0";
+    input.className = "hidden w-20 p-1 border-b text-right outline-none";
+    checkbox.addEventListener("change", () => {
+      input.classList.toggle("hidden", !checkbox.checked);
+      if (checkbox.checked) input.focus();
+    });
+    wrapper.append(label, input);
+    grid.appendChild(wrapper);
   });
 }
 
-document.querySelectorAll('.fee-tick').forEach(cb => {
-  cb.onchange = function() {
-    const input = $(this.dataset.target);
-    if (input) input.classList.toggle('hidden', !this.checked);
-    if(this.checked && input) input.focus();
-  };
-});
+async function loadFeeCategories() {
+  try {
+    const snap = await getDoc(doc(db, "settings", "bursaryFeeCategories"));
+    const saved = snap.exists() && Array.isArray(snap.data().categories) ? snap.data().categories : [];
+    const categories = [...defaultFeeCategories];
+    saved.forEach(fee => {
+      if (fee?.id && fee?.label && !categories.some(item => item.id === fee.id)) categories.push(fee);
+    });
+    feeCategories = categories;
+  } catch (err) {
+    console.error("Fee categories load error:", err);
+  }
+  renderFeeInputs();
+}
+
+const feeCategoriesReady = loadFeeCategories();
 
 // Load fee template into Part B when a class is selected
 async function loadFeeTemplateForB(className) {
+  await feeCategoriesReady;
+  document.querySelectorAll('.fee-tick').forEach(cb => {
+    cb.checked = false;
+    const input = $(cb.dataset.target);
+    if (input) { input.value = ''; input.classList.add('hidden'); }
+  });
   if (!className) return;
   try {
     const docSnap = await getDoc(doc(db, 'feeTemplates', className));
-    // Reset all
-    document.querySelectorAll('.fee-tick').forEach(cb => {
-      cb.checked = false;
-      const inp = $(cb.dataset.target);
-      if (inp) { inp.value = ''; inp.classList.add('hidden'); }
-    });
     if (docSnap.exists()) {
       const saved = docSnap.data().fees || {};
       feeCategories.forEach(f => {
@@ -629,10 +686,10 @@ async function loadFeeTemplateForB(className) {
 const bClassEl = $('b-class');
 if (bClassEl) {
   bClassEl.addEventListener('change', (e) => loadFeeTemplateForB(e.target.value));
-  bClassEl.onchange = (e) => loadFeeTemplateForB(e.target.value);
 }
 
 if($("btn-save-b")) $("btn-save-b").onclick = async () => {
+  await feeCategoriesReady;
   const btn = $("btn-save-b");
   const msg = $("msg-b");
   const data = {
@@ -640,14 +697,18 @@ if($("btn-save-b")) $("btn-save-b").onclick = async () => {
     className: $("b-class").value,
     date: $("b-date").value,
     is4thChild: is4thChildActive,
-    fees: {}, totalAmount: 0, balance: 0, timestamp: serverTimestamp(), verified: false
+    fees: {}, feeLabels: {}, totalAmount: 0, balance: 0, timestamp: serverTimestamp(), verified: false
   };
 
   if(!data.studentName || !data.className) return alert("Name/Class missing");
   
   document.querySelectorAll('.fee-tick:checked').forEach(cb => {
     const amt = Number($(cb.dataset.target).value) || 0;
-    if(amt > 0) { data.fees[cb.value] = amt; data.totalAmount += amt; }
+    if(amt > 0) {
+      data.fees[cb.value] = amt;
+      data.feeLabels[cb.value] = feeCategories.find(fee => fee.id === cb.value)?.label || cb.value;
+      data.totalAmount += amt;
+    }
   });
 
   btn.disabled = true; btn.textContent = "SAVING...";

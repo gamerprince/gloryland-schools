@@ -70,6 +70,20 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
+    const test = testSnap.data();
+    const studentSnap = await getDoc(doc(db, "students", user.uid));
+    if (!studentSnap.exists()) {
+      examDiv.innerHTML = "<div class='p-4 bg-red-100 text-red-700 rounded'>Student profile not found.</div>";
+      return;
+    }
+    const student = studentSnap.data();
+    const studentSession = student.session || "2025/2026";
+    const testSession = test.session || "2025/2026";
+    if (test.status !== "published" || test.className !== student.className || testSession !== studentSession) {
+      examDiv.innerHTML = "<div class='p-4 bg-red-100 text-red-700 rounded'>This exam is not available for your class and session.</div>";
+      return;
+    }
+
     const questionsSnap = await getDocs(
       collection(db, "tests", testId, "questions")
     );

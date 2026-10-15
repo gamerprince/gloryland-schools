@@ -62,7 +62,7 @@ onAuthStateChanged(auth, async (user) => {
       return;
     }
 
-    loadTests(student.className);
+    loadTests(student.className, student.session || "2025/2026");
 
   } catch (err) {
     console.error(err);
@@ -73,7 +73,7 @@ onAuthStateChanged(auth, async (user) => {
 /* ===============================
    LOAD EXAMS
 ================================ */
-async function loadTests(className) {
+async function loadTests(className, session) {
   const list = $("tests-list");
   list.innerHTML = "Loading exams...";
 
@@ -84,14 +84,18 @@ async function loadTests(className) {
   );
 
   const snap = await getDocs(q);
+  const tests = snap.docs.filter(docSnap => {
+    const test = docSnap.data();
+    return (test.session || "2025/2026") === session;
+  });
   list.innerHTML = "";
 
-  if (snap.empty) {
-    list.innerHTML = `No published exams for ${className}`;
+  if (tests.length === 0) {
+    list.textContent = `No published exams for ${className} in ${session}`;
     return;
   }
 
-  snap.forEach(docSnap => {
+  tests.forEach(docSnap => {
     const test = docSnap.data();
     const testId = docSnap.id;
 

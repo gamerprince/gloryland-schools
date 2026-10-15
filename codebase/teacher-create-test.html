@@ -61,6 +61,11 @@
         <option>JSS 2</option>
         <option>JSS 3</option>
       </select>
+
+      <select id="session" class="p-2 border rounded bg-white">
+        <option value="2026/2027" selected>2026/2027</option>
+        <option value="2025/2026">2025/2026</option>
+      </select>
       
       <select id="subject" class="p-2 border rounded bg-white">
         <option value="">Select Class First</option>
@@ -235,17 +240,18 @@ async function saveTest(status) {
   const title = $("title").value.trim();
   const subject = $("subject").value.trim();
   const className = $("className").value;
+  const session = $("session").value;
   const raw = $("questionsRaw").value.trim();
 
   if (!teacherId) { alert("Not authenticated"); return; }
-  if (!title || !subject || !className || !raw) { alert("Fill all fields"); return; }
+  if (!title || !subject || !className || !session || !raw) { alert("Fill all fields"); return; }
   
   const questions = parseQuestions(raw);
   if (questions.length === 0) { alert("No valid questions parsed"); return; }
 
   try {
     const testDoc = await addDoc(collection(db, "tests"), {
-      teacherId, title, subject, className, status, createdAt: serverTimestamp()
+      teacherId, title, subject, className, session, status, createdAt: serverTimestamp()
     });
     const questionsCol = collection(db, `tests/${testDoc.id}/questions`);
     for (const q of questions) { await addDoc(questionsCol, q); }

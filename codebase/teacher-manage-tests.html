@@ -48,7 +48,19 @@
   </nav>
   
   <div class="max-w-5xl mx-auto px-6 py-10">
-
+    <div class="mb-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      <div>
+        <h1 class="text-2xl font-black">Manage Tests</h1>
+        <p class="text-sm text-gray-500">Select a session to view its tests.</p>
+      </div>
+      <label class="text-xs font-bold uppercase text-gray-500">
+        Session
+        <select id="filter-session" class="block mt-1 p-3 border-2 border-indigo-100 rounded-lg bg-white text-sm font-bold text-indigo-900 min-w-[180px]">
+          <option value="2026/2027" selected>2026/2027</option>
+          <option value="2025/2026">2025/2026</option>
+        </select>
+      </label>
+    </div>
     <div id="testsList" class="space-y-4"></div>
   </div>
 
@@ -61,39 +73,40 @@ import {
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 
 const $ = id => document.getElementById(id);
+let currentTeacherId = null;
 
-// 🔥 FIXED AUTH CHECK
 onAuthStateChanged(auth, async (user) => {
   if (!user) {
     window.location.href = "teacher-login.html";
     return;
   }
-  loadTests(user.uid);
+  currentTeacherId = user.uid;
+  loadTests();
 });
 
 // Load the tests owned by this teacher
-async function loadTests(uid) {
-  console.log("Current Teacher UID:", uid); // Check your browser console for this ID
-  
-  const q = query(collection(db,'tests'), where('teacherId','==', uid));
+async function loadTests() {
+  const selectedSession = $("filter-session").value;
+  const q = query(collection(db,'tests'), where('teacherId','==', currentTeacherId));
   const snap = await getDocs(q);
 
   const list = $('testsList');
   list.innerHTML = '';
 
-  if (snap.empty) {
+  const tests = snap.docs
+    .map(testDoc => ({ id: testDoc.id, ...testDoc.data() }))
+    .filter(test => (test.session || "2025/2026") === selectedSession);
+
+  if (tests.length === 0) {
     list.innerHTML = `
       <div class="text-center py-10 text-gray-500 bg-white rounded shadow">
-        <p class="text-lg">No tests found for this account.</p>
-        <p class="text-sm mt-2">Ensure your tests in the database have the field: <br> 
-        <code class="bg-gray-100 px-1 py-0.5 rounded border">teacherId: "${uid}"</code></p>
+        <p class="text-lg">No tests found for ${selectedSession}.</p>
       </div>
     `;
     return;
   }
 
-  for (const d of snap.docs) {
-    const t = d.data();
+  for (const t of tests) {
 
     const card = document.createElement('div');
     card.className = 'bg-white p-4 rounded shadow flex justify-between items-center';
@@ -102,6 +115,7 @@ async function loadTests(uid) {
       <div>
         <div class="font-semibold">${t.title || 'Untitled Test'}</div>
         <div class="text-sm text-gray-600">${t.className || ''} • ${t.subject || ''}</div>
+        <div class="text-xs text-gray-500">Session: ${t.session || '2025/2026'}</div>
         <div class="text-xs text-gray-500">Status: ${t.status || 'draft'}</div>
       </div>
     `;
@@ -112,12 +126,12 @@ async function loadTests(uid) {
     const edit = document.createElement('a');
     edit.className = 'px-3 py-1 border rounded text-sm hover:bg-gray-50';
     edit.textContent = 'Edit';
-    edit.href = `teacher-edit-test.html?testId=${d.id}`;
+    edit.href = `teacher-edit-test.html?testId=${t.id}`;
 
     const view = document.createElement('button');
     view.className = 'px-3 py-1 bg-blue-600 text-white rounded text-sm hover:bg-blue-700';
     view.textContent = 'View Attempts';
-    view.onclick = () => window.location.href = `teacher-view-attempts.html?testId=${d.id}`;
+    view.onclick = () => window.location.href = `teacher-view-attempts.html?testId=${t.id}`;
 
     const publish = document.createElement('button');
     publish.className = 'px-3 py-1 text-sm rounded text-white font-semibold';
@@ -126,10 +140,10 @@ async function loadTests(uid) {
     publish.className = `px-3 py-1 text-sm rounded text-white font-semibold ${t.status === 'published' ? 'bg-gray-500' : 'bg-green-600 hover:bg-green-700'}`;
     
     publish.onclick = async () => {
-      await updateDoc(doc(db, 'tests', d.id), {
+      await updateDoc(doc(db, 'tests', t.id), {
         status: t.status === 'published' ? 'draft' : 'published'
       });
-      loadTests(uid);
+      loadTests();
     };
 
     const del = document.createElement('button');
@@ -137,8 +151,8 @@ async function loadTests(uid) {
     del.textContent = 'Delete';
     del.onclick = async () => {
       if (!confirm('Delete this test?')) return;
-      await deleteDoc(doc(db,'tests',d.id));
-      loadTests(uid);
+      await deleteDoc(doc(db,'tests',t.id));
+      loadTests();
     };
 
     actions.append(edit, view, publish, del);
@@ -148,6 +162,7 @@ async function loadTests(uid) {
 }
 
 // navigation helpers
+ $("filter-session").onchange = loadTests;
 const mobileBtn = $("mobile-menu-btn");
 const mobileMenu = $("mobile-menu");
 if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");

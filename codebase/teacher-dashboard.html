@@ -62,7 +62,7 @@
   
   <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-blue-500">
-      <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Students in Class</div>
+      <div class="text-xs text-gray-400 font-bold uppercase tracking-wider">Students in Class &amp; Session</div>
       <div id="stat-students" class="text-3xl font-black text-blue-600 mt-1">-</div>
     </div>
     <div class="bg-white p-6 rounded-xl shadow-sm border border-gray-100 border-l-4 border-l-indigo-500">
@@ -81,24 +81,37 @@
         <h2 class="text-xl font-black text-gray-800">Class Management</h2>
         <p class="text-sm text-gray-500">Select a class to view registered students and compiled scores.</p>
       </div>
-      <select id="filter-class" class="p-3 border-2 border-indigo-100 rounded-lg bg-gray-50 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 focus:bg-white min-w-[200px] transition-colors">
-        <option value="">-- Select Class --</option>
-        <option>Basic 1 Onyx</option>
-        <option>Basic 1 Gold</option>
-        <option>Basic 2</option>
-        <option>Basic 3</option>
-        <option>Basic 4</option>
-        <option>Basic 5</option>
-        <option>Basic 6</option>
-        <option>JSS 1</option>
-        <option>JSS 2</option>
-        <option>JSS 3</option>
-      </select>
+      <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
+        <label class="text-xs font-bold uppercase text-gray-500">
+          Class
+          <select id="filter-class" class="block mt-1 p-3 border-2 border-indigo-100 rounded-lg bg-gray-50 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 focus:bg-white min-w-[200px] transition-colors">
+            <option value="">-- Select Class --</option>
+            <option>Basic 1 Onyx</option>
+            <option>Basic 1 Gold</option>
+            <option>Basic 2</option>
+            <option>Basic 3</option>
+            <option>Basic 4</option>
+            <option>Basic 5</option>
+            <option>Basic 6</option>
+            <option>JSS 1</option>
+            <option>JSS 2</option>
+            <option>JSS 3</option>
+          </select>
+        </label>
+        <label class="text-xs font-bold uppercase text-gray-500">
+          Session
+          <select id="filter-session" class="block mt-1 p-3 border-2 border-indigo-100 rounded-lg bg-gray-50 text-sm font-bold text-indigo-900 outline-none focus:border-indigo-500 focus:bg-white min-w-[160px] transition-colors">
+            <option value="2026/2027" selected>2026/2027</option>
+            <option value="2025/2026">2025/2026</option>
+          </select>
+        </label>
+      </div>
     </div>
   </div>
 
-  <div class="flex gap-4 mb-4 border-b">
+  <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4 border-b">
     <button id="tab-accounts" class="pb-2 px-4 font-bold border-b-4 border-blue-600 text-blue-600 transition-colors">Student Accounts</button>
+    <button id="add-student-btn" type="button" disabled class="mb-2 px-4 py-2 rounded-lg bg-green-600 text-white font-bold disabled:opacity-50 disabled:cursor-not-allowed hover:bg-green-700">+ Add Student</button>
   </div>
 
   <div class="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
@@ -112,6 +125,30 @@
       </table>
     </div>
   </div>
+</div>
+
+<div id="student-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
+  <form id="student-form" class="bg-white p-8 rounded-2xl max-w-md w-full shadow-2xl space-y-4">
+    <h3 class="text-xl font-black">Add Student Account</h3>
+    <p id="student-class-label" class="text-sm text-gray-500"></p>
+    <label class="block text-xs font-bold uppercase text-gray-500">
+      Student Name
+      <input id="new-student-name" type="text" required maxlength="120" class="mt-1 w-full p-3 border rounded-lg normal-case font-normal" autocomplete="name">
+    </label>
+    <label class="block text-xs font-bold uppercase text-gray-500">
+      Student Email / Login ID
+      <input id="new-student-email" type="email" required class="mt-1 w-full p-3 border rounded-lg normal-case font-normal" autocomplete="email">
+    </label>
+    <label class="block text-xs font-bold uppercase text-gray-500">
+      Initial Password
+      <input id="new-student-password" type="password" required minlength="6" class="mt-1 w-full p-3 border rounded-lg normal-case font-normal" autocomplete="new-password">
+    </label>
+    <div id="student-form-msg" class="text-sm font-bold" role="status"></div>
+    <div class="flex gap-3">
+      <button id="save-student-btn" type="submit" class="flex-1 bg-green-600 text-white p-3 rounded-lg font-bold hover:bg-green-700">Create Account</button>
+      <button id="cancel-student-btn" type="button" class="flex-1 bg-gray-100 p-3 rounded-lg font-bold text-gray-600 hover:bg-gray-200">Cancel</button>
+    </div>
+  </form>
 </div>
 
 <div id="password-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-6 z-50">
@@ -129,11 +166,14 @@
 </div>
 
 <script type="module">
-  import { auth, db } from "./firebase-config.js";
-  import { collection, query, where, getDocs, doc, deleteDoc, updateDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
-  import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import { auth, db, firebaseConfig } from "./firebase-config.js";
+  import { collection, query, where, getDocs, doc, deleteDoc, updateDoc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+  import { onAuthStateChanged, signOut, updatePassword, reauthenticateWithCredential, EmailAuthProvider, getAuth, createUserWithEmailAndPassword, deleteUser } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-app.js";
 
   const $ = id => document.getElementById(id);
+  const studentAccountsApp = initializeApp(firebaseConfig, "TeacherStudentAccounts");
+  const studentAccountsAuth = getAuth(studentAccountsApp);
   let currentTab = "accounts";
 
   onAuthStateChanged(auth, (user) => {
@@ -156,7 +196,73 @@
     $("password-modal").classList.remove("hidden");
   };
   $("filter-class").onchange = loadData;
+  $("filter-session").onchange = loadData;
   $("tab-accounts").onclick = () => switchTab("accounts");
+  $("add-student-btn").onclick = openStudentModal;
+  $("cancel-student-btn").onclick = closeStudentModal;
+  $("student-form").addEventListener("submit", createStudent);
+
+  function openStudentModal() {
+    const className = $("filter-class").value;
+    if (!className) return;
+    $("student-class-label").textContent = `This account will be registered in ${className} for ${$("filter-session").value}.`;
+    $("student-form-msg").textContent = "";
+    $("student-modal").classList.remove("hidden");
+    $("new-student-name").focus();
+  }
+
+  function closeStudentModal() {
+    $("student-modal").classList.add("hidden");
+    $("student-form").reset();
+    $("student-form-msg").textContent = "";
+  }
+
+  async function createStudent(event) {
+    event.preventDefault();
+    const className = $("filter-class").value;
+    const session = $("filter-session").value;
+    const name = $("new-student-name").value.trim();
+    const email = $("new-student-email").value.trim();
+    const password = $("new-student-password").value;
+    const message = $("student-form-msg");
+    const submitButton = $("save-student-btn");
+    if (!className || !name || !email || password.length < 6) return;
+
+    submitButton.disabled = true;
+    message.className = "text-sm font-bold text-gray-500";
+    message.textContent = "Creating student account...";
+    let studentCredential;
+    try {
+      studentCredential = await createUserWithEmailAndPassword(studentAccountsAuth, email, password);
+      await setDoc(doc(db, "students", studentCredential.user.uid), {
+        uid: studentCredential.user.uid,
+        name,
+        email,
+        className,
+        session,
+        createdAt: serverTimestamp()
+      });
+      studentCredential = null;
+      await signOut(studentAccountsAuth);
+      closeStudentModal();
+      await loadData();
+      alert(`Student account created for ${name}.`);
+    } catch (err) {
+      if (studentCredential) {
+        try {
+          await deleteUser(studentCredential.user);
+        } catch (cleanupError) {
+          console.error("Unable to remove the incomplete student login account:", cleanupError);
+        }
+      }
+      if (studentAccountsAuth.currentUser) await signOut(studentAccountsAuth);
+      console.error("Unable to create student account:", err);
+      message.className = "text-sm font-bold text-red-600";
+      message.textContent = `Unable to create account: ${err.message}`;
+    } finally {
+      submitButton.disabled = false;
+    }
+  }
 
   function switchTab(tab) {
     currentTab = tab;
@@ -166,7 +272,9 @@
 
   async function loadData() {
     const className = $("filter-class").value;
+    const selectedSession = $("filter-session").value;
     if(!className) {
+      $("add-student-btn").disabled = true;
       $("stat-students").textContent = "-";
       $("stat-results").textContent = "-";
       $("stat-tests").textContent = "-";
@@ -176,13 +284,17 @@
 
     const tbody = $("main-list");
     const thead = $("table-head");
+    $("add-student-btn").disabled = false;
     tbody.innerHTML = '<tr><td colspan="5" class="p-10 text-center font-bold text-gray-500 animate-pulse">Loading class data...</td></tr>';
 
     try {
       // 1. Fetch Students
       const qStudents = query(collection(db, "students"), where("className", "==", className));
       const sSnap = await getDocs(qStudents);
-      $("stat-students").textContent = sSnap.size;
+      const accounts = sSnap.docs
+        .map(d => ({ id: d.id, ...d.data() }))
+        .filter(student => (student.session || "2025/2026") === selectedSession);
+      $("stat-students").textContent = accounts.length;
 
       // 2. Fetch Results
       const qResults = query(collection(db, "compiledResults"), where("className", "==", className));
@@ -190,34 +302,54 @@
       
       // Calculate unique students with results
       const uniqueStudents = new Set();
-      rSnap.forEach(d => uniqueStudents.add((d.data().studentNameLower || d.data().studentName).toLowerCase()));
+      rSnap.forEach(d => {
+        const result = d.data();
+        if ((result.session || "2025/2026") !== selectedSession) return;
+        const studentName = result.studentNameLower || result.studentName;
+        if (studentName) uniqueStudents.add(studentName.toLowerCase());
+      });
       $("stat-results").textContent = uniqueStudents.size;
 
       // 3. Fetch Tests
       const qTests = query(collection(db, "tests"), where("className", "==", className));
       const tSnap = await getDocs(qTests);
-      $("stat-tests").textContent = tSnap.size;
+      const sessionTests = tSnap.docs.filter(d => (d.data().session || "2025/2026") === selectedSession);
+      $("stat-tests").textContent = sessionTests.length;
 
       // RENDER TABS
       if (currentTab === "accounts") {
         thead.innerHTML = `<tr><th class="p-4">Student Name</th><th class="p-4 hidden sm:table-cell">Email / Login ID</th><th class="p-4 hidden sm:table-cell">Joined Date</th><th class="p-4 text-center">Actions</th></tr>`;
-        tbody.innerHTML = sSnap.empty ? `<tr><td colspan="4" class="p-10 text-center text-gray-400">No student accounts found for ${className}.</td></tr>` : "";
+        tbody.innerHTML = accounts.length === 0 ? `<tr><td colspan="4" class="p-10 text-center text-gray-400">No student accounts found for ${className} in ${selectedSession}.</td></tr>` : "";
         
-        const accounts = sSnap.docs.map(d => ({ id: d.id, ...d.data() }));
         accounts.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
 
         accounts.forEach(s => {
-          tbody.innerHTML += `
-            <tr class="hover:bg-blue-50 transition-colors">
-              <td class="p-4 font-bold text-gray-900">${s.name}</td>
-              <td class="p-4 hidden sm:table-cell text-gray-600">${s.email}</td>
-              <td class="p-4 hidden sm:table-cell text-xs text-gray-500">${s.createdAt?.toDate().toLocaleDateString() || 'N/A'}</td>
-              <td class="p-4 text-center space-x-2">
-                <button onclick="window.location.href='teacher-compiled-result.html?name=${encodeURIComponent(s.name)}&class=${encodeURIComponent(className)}'" class="text-indigo-600 font-black border border-indigo-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-indigo-600 hover:text-white transition-colors text-[10px]">SCORE</button>
-                <button onclick="editStudent('${s.id}', '${s.name}')" class="text-blue-600 font-black border border-blue-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-blue-600 hover:text-white transition-colors text-[10px]">EDIT</button>
-                <button onclick="deleteStudent('${s.id}', '${s.name}')" class="text-red-600 font-black border border-red-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-red-600 hover:text-white transition-colors text-[10px]">DELETE</button>
-              </td>
-            </tr>`;
+          const row = document.createElement("tr");
+          row.className = "hover:bg-blue-50 transition-colors";
+          const nameCell = document.createElement("td");
+          nameCell.className = "p-4 font-bold text-gray-900";
+          nameCell.textContent = s.name || "Unnamed Student";
+          const emailCell = document.createElement("td");
+          emailCell.className = "p-4 hidden sm:table-cell text-gray-600";
+          emailCell.textContent = s.email || "";
+          const joinedCell = document.createElement("td");
+          joinedCell.className = "p-4 hidden sm:table-cell text-xs text-gray-500";
+          joinedCell.textContent = s.createdAt?.toDate ? s.createdAt.toDate().toLocaleDateString() : "N/A";
+          const actionsCell = document.createElement("td");
+          actionsCell.className = "p-4 text-center space-x-2";
+          const editButton = document.createElement("button");
+          editButton.type = "button";
+          editButton.className = "text-blue-600 font-black border border-blue-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-blue-600 hover:text-white transition-colors text-[10px]";
+          editButton.textContent = "EDIT";
+          editButton.addEventListener("click", () => window.editStudent(s.id, s.name || ""));
+          const deleteButton = document.createElement("button");
+          deleteButton.type = "button";
+          deleteButton.className = "text-red-600 font-black border border-red-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-red-600 hover:text-white transition-colors text-[10px]";
+          deleteButton.textContent = "DELETE";
+          deleteButton.addEventListener("click", () => window.deleteStudent(s.id, s.name || "Unnamed Student"));
+          actionsCell.append(editButton, deleteButton);
+          row.append(nameCell, emailCell, joinedCell, actionsCell);
+          tbody.appendChild(row);
         });
       } else {
         thead.innerHTML = `<tr><th class="p-4">Student Name</th><th class="p-4">Subjects Breakdown</th><th class="p-4 text-center">Grand Total</th><th class="p-4 text-center">Action</th></tr>`;
@@ -267,7 +399,7 @@
   };
 
   window.deleteStudent = async (docId, name) => {
-    if (!confirm(`WARNING: Are you sure you want to completely delete the account for "${name}"? This cannot be undone.`)) return;
+    if (!confirm(`Remove the student profile for "${name}" from the portal? This cannot be undone.`)) return;
     try {
       await deleteDoc(doc(db, "students", docId));
       loadData(); // Refresh the list

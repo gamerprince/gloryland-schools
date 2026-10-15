@@ -59,6 +59,10 @@
       <option>JSS 2</option>
       <option>JSS 3</option>
     </select>
+    <select id="session" class="w-full p-2 border rounded mb-3 bg-white">
+      <option value="2026/2027">2026/2027</option>
+      <option value="2025/2026">2025/2026</option>
+    </select>
     <input id="subject" class="w-full p-2 border rounded mb-3" placeholder="Subject" />
     
     <div id="questionsArea" class="space-y-4"></div>
@@ -87,6 +91,7 @@ async function loadTest() {
   const t = tdoc.data();
   $('title').value = t.title || '';
   $('className').value = t.className || '';
+  $('session').value = t.session || '2025/2026';
   $('subject').value = t.subject || '';
 
   const qSnap = await getDocs(collection(db, `tests/${testId}/questions`));
@@ -131,6 +136,7 @@ $('btn-save').addEventListener('click', async ()=> {
     await updateDoc(doc(db,'tests',testId), { 
       title: $('title').value.trim(), 
       className: $('className').value.trim(), 
+      session: $('session').value,
       subject: $('subject').value.trim() 
     });
 

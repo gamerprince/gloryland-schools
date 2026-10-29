@@ -4,8 +4,11 @@ import {
   collection, addDoc, query, where, getDocs, doc, getDoc, writeBatch, deleteDoc, setDoc, updateDoc
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { applyTeacherSessionLock } from './teacher-session-lock.js';
 
 const $ = id => document.getElementById(id);
+$("session").onchange = () => applyTeacherSessionLock(db, "session");
+applyTeacherSessionLock(db, "session");
 
 // ===== UTILITIES =====
 // Grading bands (strict per request):
@@ -98,6 +101,7 @@ let currentEntryData = {
 };
 
 $("btn-new-entry").onclick = async () => {
+  if (await applyTeacherSessionLock(db, "session")) return alert("This session has ended. Result entry is read-only.");
   const studentName = $("studentName").value.trim();
   const className = $("className").value.trim();
   const session = $("session").value.trim();

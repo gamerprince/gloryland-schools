@@ -24,6 +24,13 @@ service cloud.firestore {
       return isAuthenticated() && request.auth.uid == teacherId;
     }
 
+    function sessionIsActive(sessionName) {
+      let sessionId = sessionName.replace('/', '-');
+      return sessionName == '2026/2027' && !exists(/databases/$(database)/documents/sessions/$(sessionId)) ||
+        (exists(/databases/$(database)/documents/sessions/$(sessionId)) &&
+          get(/databases/$(database)/documents/sessions/$(sessionId)).data.status != 'ended');
+    }
+
     function hasStudentProfile() {
       return isAuthenticated() &&
         exists(/databases/$(database)/documents/students/$(request.auth.uid));
@@ -60,16 +67,38 @@ service cloud.firestore {
           request.resource.data.uid == studentId &&
           request.resource.data.name is string &&
           request.resource.data.email is string &&
-          request.resource.data.className is string);
-      allow update: if (isAuthenticated() && request.auth.uid == studentId) ||
-        (isTeacher() &&
-          resource.data.className is string &&
-          request.resource.data.className == resource.data.className &&
-          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['name']));
-      allow delete: if (isAuthenticated() && request.auth.uid == studentId) ||
-        (isTeacher() && resource.data.className is string);
+          request.resource.data.className is string &&
+          sessionIsActive(request.resource.data.session));
+      allow update: if (isAuthenticated() && request.auth.uid == studentId && sessionIsActive(resource.data.session)) ||
+        (isTeacher() && resource.data.className is string && sessionIsActive(resource.data.session) &&
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+            'uid', 'email', 'name', 'className', 'session', 'promotionStatus', 'promotedFrom',
+            'lastPromotionTo', 'promotedAt', 'teacherEdited', 'activeEnrollmentSession', 'updatedAt'
+          ]));
+      allow delete: if (isAuthenticated() && request.auth.uid == studentId && sessionIsActive(resource.data.session)) ||
+        (isTeacher() && resource.data.className is string && sessionIsActive(resource.data.session));
+    }
+
+    match /students_registry/{regNo} {
+      allow read, update, delete: if isTeacher();
+      allow create: if isTeacher();
     }
     
+    // Session snapshots copy enrollment records without changing previous sessions.
+    match /sessions/{sessionId} {
+      allow read: if isTeacher() || isAdmin();
+      allow create, update: if isTeacher() || isAdmin();
+      allow delete: if isAdmin();
+    }
+
+    match /studentEnrollments/{enrollmentId} {
+      allow read: if isTeacher() || isAdmin() ||
+        (isAuthenticated() && resource.data.uid == request.auth.uid);
+      allow create: if isTeacher() && sessionIsActive(request.resource.data.session);
+      allow update: if isTeacher() && sessionIsActive(resource.data.session);
+      allow delete: if isTeacher() && sessionIsActive(resource.data.session);
+    }
+
     // ============================================================================
     // COLLECTIONS: TEACHERS
     // ============================================================================
@@ -106,8 +135,8 @@ service cloud.firestore {
         (resource.data.status == 'published' &&
           isStudentInTestClass(resource.data));
       // Only the teacher who created it can modify
-      allow create: if isTeacher();
-      allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid;
+      allow create: if isTeacher() && sessionIsActive(request.resource.data.session);
+      allow update, delete: if isTeacher() && resource.data.teacherId == request.auth.uid && sessionIsActive(resource.data.session);
       
       // Subcollection: questions
       match /questions/{questionId} {
@@ -118,7 +147,8 @@ service cloud.firestore {
             isStudentInTestSession(get(/databases/$(database)/documents/tests/$(testId)).data));
         // Only teacher who created the test can modify questions
         allow create, update, delete: if isTeacher() && 
-          get(/databases/$(database)/documents/tests/$(testId)).data.teacherId == request.auth.uid;
+            get(/databases/$(database)/documents/tests/$(testId)).data.teacherId == request.auth.uid &&
+            sessionIsActive(get(/databases/$(database)/documents/tests/$(testId)).data.session);
       }
     }
     
@@ -146,12 +176,14 @@ service cloud.firestore {
     match /compiledResults/{resultId} {
       // Teachers can create results for their students
       allow create: if isTeacher() && 
-        request.resource.data.teacherId == request.auth.uid;
+        request.resource.data.teacherId == request.auth.uid &&
+        sessionIsActive(request.resource.data.session);
       
       // Teachers can read/update only their own results
       allow read: if isTeacher() && resource.data.teacherId == request.auth.uid;
       allow update: if isTeacher() && 
         resource.data.teacherId == request.auth.uid &&
+        sessionIsActive(resource.data.session) &&
         // Teachers can only update score fields, not published/feeCleared
         !request.resource.data.diff(resource.data).affectedKeys().hasAny(['published', 'feeCleared']);
       
@@ -175,6 +207,12 @@ service cloud.firestore {
     // COLLECTIONS: AUDIT LOGS
     // ============================================================================
     
+    match /teacher_assignments/{assignmentId} {
+      allow read: if isTeacher();
+      allow create, update: if isTeacher() && sessionIsActive(request.resource.data.session);
+      allow delete: if isTeacher() && sessionIsActive(resource.data.session);
+    }
+
     match /auditLogs/{logId} {
       // Admins can create logs (via backend function)
       allow create: if isAdmin() || 

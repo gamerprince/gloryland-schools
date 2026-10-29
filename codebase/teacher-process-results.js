@@ -4,6 +4,7 @@ import {
   collection, query, where, getDocs, deleteDoc, doc 
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { ensureSessionEndedBanner, getTeacherSessionStatus } from './teacher-session-lock.js';
 
 const $ = id => document.getElementById(id);
 
@@ -15,14 +16,28 @@ if ($("logoutBtnMob")) $("logoutBtnMob").onclick = () => signOut(auth).then(() =
 if ($("logoutBtnTop")) $("logoutBtnTop").onclick = () => signOut(auth).then(() => window.location.href = "portal.html");
 let teacherData = null;
 let allStudents = {}; 
+let processSessionStatus = "active";
+
+async function refreshProcessSessionStatus() {
+  processSessionStatus = await getTeacherSessionStatus(db, $("session").value.trim());
+  const banner = ensureSessionEndedBanner("process-session-lock-banner");
+  banner.classList.toggle("hidden", processSessionStatus !== "ended");
+  const bannerText = banner.querySelector("div");
+  if (bannerText) bannerText.textContent = "Session Ended — Results remain available to view and print. Editing and deleting are disabled.";
+  return processSessionStatus;
+}
 
 // Initialize Auth
 requireRole('teacher').then(res => {
   teacherData = res;
 }).catch(err => console.error("Auth Error:", err));
 
-// Load Student List
+$("session").onchange = refreshProcessSessionStatus;
+refreshProcessSessionStatus();
+
+// Load Student List — historical sessions stay searchable and printable.
 $("btn-load").onclick = async () => {
+  await refreshProcessSessionStatus();
   const className = $("className").value.trim();
   const term = Number($("term").value);
   const session = $("session").value.trim();
@@ -112,7 +127,9 @@ function renderStudentTable() {
         </span>
       </td>
       <td class="p-2 md:p-4 text-center">
-        ${!isPublished ? `
+        ${processSessionStatus === "ended" ? `
+          <span class="text-gray-400 text-[10px] font-bold italic bg-gray-200 px-2 py-1 rounded">READ ONLY</span>
+        ` : !isPublished ? `
           <button onclick="deleteStudentReport('${s.name}', '${selectedClass}', ${term}, '${session}')" class="text-red-600 hover:text-red-800 text-xs font-bold underline">
             Delete Result
           </button>
@@ -134,6 +151,8 @@ function renderStudentTable() {
 
 // 3. New Delete Logic (Safe and tailored to your database)
 window.deleteStudentReport = async (studentName, className, term, session) => {
+  await refreshProcessSessionStatus();
+  if (processSessionStatus === "ended") return alert("This session has ended. Historical results cannot be deleted.");
   if (!confirm(`⚠️ Are you sure you want to delete all results for ${studentName}? \n\nThis will wipe their scores for this term so you can re-enter them in the 'Enter Result' page.`)) {
     return;
   }
@@ -170,10 +189,8 @@ window.deleteStudentReport = async (studentName, className, term, session) => {
 // 3. Complete viewReportCard function to use your existing template logic
 const viewReportCard = (name) => {
   const s = allStudents[name];
-  if (!s.feeCleared) {
-    alert("❌ Result cannot be viewed: School fees not cleared.");
-    return;
-  }
+  // Teachers can view and print historical results even after the session ends.
+  // Fee status remains visible on the report and in the student list.
 
   const subjects = s.subjects;
   const meta = s.meta;

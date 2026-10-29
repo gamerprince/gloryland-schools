@@ -61,7 +61,14 @@
       <option>JSS 3</option>
     </select>
 
-    <label class="block mb-2 font-semibold">Step 2: Pick Subjects you teach for this class</label>
+    <label class="block mb-2 font-semibold">Step 2: Select Session</label>
+    <select id="session" class="w-full p-2 border rounded mb-6 bg-white">
+      <option value="2026/2027" selected>2026/2027</option>
+      <option value="2025/2026">2025/2026</option>
+      <option value="2024/2025">2024/2025</option>
+    </select>
+
+    <label class="block mb-2 font-semibold">Step 3: Pick Subjects you teach for this class</label>
     <div id="subjectList" class="grid grid-cols-2 gap-2 mb-6">
       </div>
 
@@ -80,9 +87,12 @@
 import { auth, db } from "./firebase-config.js";
 import { collection, doc, setDoc, getDoc, getDocs, query, where, deleteDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { applyTeacherSessionLock } from "./teacher-session-lock.js";
 
 const $ = id => document.getElementById(id);
 let teacherId = null;
+$("session").onchange = () => applyTeacherSessionLock(db, "session").then(loadMyRegisteredSubjects);
+applyTeacherSessionLock(db, "session");
 
 // The Master List of Subjects (Matches Admin logic)
 const masterSubjects = [
@@ -110,6 +120,7 @@ masterSubjects.forEach(sub => {
 });
 
 $("btn-save").onclick = async () => {
+  if (await applyTeacherSessionLock(db, "session")) return alert("This session has ended. Subject registration is read-only.");
   const className = $("className").value;
   const selected = Array.from(document.querySelectorAll(".sub-check:checked")).map(el => el.value);
 
@@ -121,9 +132,10 @@ $("btn-save").onclick = async () => {
   try {
     // Save to a collection called 'teacher_assignments'
     // Document ID is a combination of teacherId and Class to prevent duplicates
-    await setDoc(doc(db, "teacher_assignments", `${teacherId}_${className.replace(/\s+/g, '')}`), {
+    await setDoc(doc(db, "teacher_assignments", `${teacherId}_${$("session").value.replace(/[^a-zA-Z0-9]+/g, '-')}_${className.replace(/\s+/g, '')}`), {
       teacherId,
       className,
+      session: $("session").value,
       subjects: selected
     });
     alert("Subjects registered successfully!");
@@ -141,6 +153,7 @@ async function loadMyRegisteredSubjects() {
 
   snap.forEach(d => {
     const data = d.data();
+    if ((data.session || "2025/2026") !== $("session").value) return;
     const div = document.createElement("div");
     div.className = "p-3 bg-gray-50 border rounded flex justify-between items-center";
     div.innerHTML = `
@@ -155,6 +168,7 @@ async function loadMyRegisteredSubjects() {
 }
 
 window.deleteAssignment = async (id) => {
+  if (await applyTeacherSessionLock(db, "session")) return alert("This session has ended. Subject registration is read-only.");
   if(confirm("Remove this registration?")) {
     await deleteDoc(doc(db, "teacher_assignments", id));
     loadMyRegisteredSubjects();

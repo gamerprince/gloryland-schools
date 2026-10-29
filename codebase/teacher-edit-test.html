@@ -78,6 +78,7 @@
 import { auth, db } from './firebase-config.js';
 import { signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { doc, getDoc, collection, getDocs, updateDoc, addDoc } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { applyTeacherSessionLock } from "./teacher-session-lock.js";
 
 const $ = id => document.getElementById(id);
 const params = new URLSearchParams(location.search);
@@ -93,6 +94,7 @@ async function loadTest() {
   $('className').value = t.className || '';
   $('session').value = t.session || '2025/2026';
   $('subject').value = t.subject || '';
+  await applyTeacherSessionLock(db, 'session');
 
   const qSnap = await getDocs(collection(db, `tests/${testId}/questions`));
   const area = $('questionsArea'); 
@@ -120,13 +122,16 @@ async function loadTest() {
 
 function escapeHtml(s){ return s.replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
 
+$('session').onchange = () => applyTeacherSessionLock(db, 'session');
 $('btn-add-q').addEventListener('click', async ()=> {
+  if (await applyTeacherSessionLock(db, 'session')) return alert('This session has ended. Test editing is read-only.');
   const newQ = { text: 'New question', options: ['Option 1','Option 2','Option 3','Option 4'], answer: 'A' };
   await addDoc(collection(db, `tests/${testId}/questions`), newQ);
   loadTest();
 });
 
 $('btn-save').addEventListener('click', async ()=> {
+  if (await applyTeacherSessionLock(db, 'session')) return alert('This session has ended. Test editing is read-only.');
   const btn = $('btn-save');
   btn.disabled = true;
   btn.textContent = 'Saving...';

@@ -118,9 +118,12 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { 
   collection, addDoc, serverTimestamp, doc, getDoc 
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
+import { applyTeacherSessionLock } from "./teacher-session-lock.js";
 
 const $ = id => document.getElementById(id);
 let teacherId = null;
+$("session").onchange = () => applyTeacherSessionLock(db, "session");
+applyTeacherSessionLock(db, "session");
 
 // 1. Authenticate Teacher
 onAuthStateChanged(auth, user => {
@@ -237,6 +240,7 @@ $("btn-save").addEventListener("click", () => saveTest("published"));
 $("btn-save-draft").addEventListener("click", () => saveTest("draft"));
 
 async function saveTest(status) {
+  if (await applyTeacherSessionLock(db, "session")) return alert("This session has ended. Test creation is read-only.");
   const title = $("title").value.trim();
   const subject = $("subject").value.trim();
   const className = $("className").value;

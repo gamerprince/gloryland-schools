@@ -71,6 +71,7 @@ import {
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
+import { applyTeacherSessionLock } from "./teacher-session-lock.js";
 
 const $ = id => document.getElementById(id);
 let currentTeacherId = null;
@@ -86,6 +87,7 @@ onAuthStateChanged(auth, async (user) => {
 
 // Load the tests owned by this teacher
 async function loadTests() {
+  const sessionEnded = await applyTeacherSessionLock(db, "filter-session");
   const selectedSession = $("filter-session").value;
   const q = query(collection(db,'tests'), where('teacherId','==', currentTeacherId));
   const snap = await getDocs(q);
@@ -155,6 +157,13 @@ async function loadTests() {
       loadTests();
     };
 
+    if (sessionEnded) {
+      edit.classList.add('pointer-events-none', 'opacity-50');
+      publish.disabled = true;
+      del.disabled = true;
+      publish.classList.add('opacity-50', 'cursor-not-allowed');
+      del.classList.add('opacity-50', 'cursor-not-allowed');
+    }
     actions.append(edit, view, publish, del);
     card.append(actions);
     list.append(card);
@@ -162,7 +171,8 @@ async function loadTests() {
 }
 
 // navigation helpers
- $("filter-session").onchange = loadTests;
+ $("filter-session").onchange = () => applyTeacherSessionLock(db, "filter-session").then(loadTests);
+applyTeacherSessionLock(db, "filter-session");
 const mobileBtn = $("mobile-menu-btn");
 const mobileMenu = $("mobile-menu");
 if (mobileBtn) mobileBtn.onclick = () => mobileMenu.classList.toggle("hidden");

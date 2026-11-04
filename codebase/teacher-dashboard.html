@@ -372,6 +372,7 @@
       canonicalSnap.forEach(d => {
         const s = d.data();
         if ((s.session || "2025/2026") === fromSession && !s.isGuest && s.className !== "Guest") {
+          if (s.deleted || s.deletedSession === fromSession) return;
           enrollmentMap.set(s.uid || d.id, { ...s, uid: s.uid || d.id, originalStudentId: s.uid || d.id });
         }
       });
@@ -499,17 +500,26 @@
         console.warn("Session enrollments unavailable; using legacy student profiles:", enrollmentError);
       }
 
-      // Legacy/current-session fallback for profiles created before session snapshots existed.
-      if (accountMap.size === 0) {
-        const qStudents = query(collection(db, "students"), where("className", "==", className));
-        const sSnap = await getDocs(qStudents);
-        sSnap.docs.forEach(d => {
-          const student = d.data();
-          if ((student.session || "2025/2026") === selectedSession && !student.isGuest && student.className !== "Guest") {
-            accountMap.set(d.id, { id: d.id, uid: student.uid || d.id, ...student, enrollmentRecord: false });
-          }
-        });
-      }
+      // Merge canonical student profiles too. This is intentional: during/after
+      // promotion, an enrollment snapshot may be missing for an individual
+      // student while the canonical profile already contains the new class and
+      // session. Adding a new student must never replace the promoted roster.
+      const qStudents = query(collection(db, "students"), where("className", "==", className));
+      const sSnap = await getDocs(qStudents);
+      sSnap.docs.forEach(d => {
+        const student = d.data();
+        if ((student.session || "2025/2026") !== selectedSession || student.isGuest || student.className === "Guest") return;
+        if (student.deleted || student.deletedSession === selectedSession) return;
+        const studentId = student.uid || d.id;
+        if (!accountMap.has(studentId)) {
+          accountMap.set(studentId, {
+            id: d.id,
+            uid: studentId,
+            ...student,
+            enrollmentRecord: false
+          });
+        }
+      });
       const accounts = Array.from(accountMap.values());
       $("stat-students").textContent = accounts.length;
 
@@ -563,7 +573,7 @@
           deleteButton.type = "button";
           deleteButton.className = "text-red-600 font-black border border-red-200 px-3 py-1 rounded shadow-sm bg-white hover:bg-red-600 hover:text-white transition-colors text-[10px]";
           deleteButton.textContent = "DELETE";
-          deleteButton.addEventListener("click", () => window.deleteStudent(s.id, s.name || "Unnamed Student"));
+          deleteButton.addEventListener("click", () => window.deleteStudent(s, s.name || "Unnamed Student"));
           actionsCell.append(editButton, deleteButton);
           row.append(nameCell, emailCell, joinedCell, actionsCell);
           tbody.appendChild(row);
@@ -632,28 +642,41 @@
     }
   };
 
-  window.deleteStudent = async (docId, name) => {
+  window.deleteStudent = async (student, name) => {
     if (await applyTeacherSessionLock(db, "filter-session")) return alert("This session has ended. Existing student data is read-only.");
     if (!confirm(`Remove "${name}" from this session only? Previous session records will remain.`)) return;
     try {
-      const enrollment = await getDocs(query(collection(db, "studentEnrollments"), where("session", "==", $("filter-session").value)));
-      let removedEnrollment = false;
-      enrollment.forEach(d => {
-        if ((d.data().uid || d.data().originalStudentId || d.id) === docId || d.id === docId) removedEnrollment = true;
+      const selectedSession = $("filter-session").value;
+      const studentId = student.uid || student.originalStudentId || student.id;
+
+      const snap = await getDocs(query(
+        collection(db, "studentEnrollments"),
+        where("session", "==", selectedSession)
+      ));
+      const batch = writeBatch(db);
+      snap.forEach(d => {
+        const enrollment = d.data();
+        const enrollmentId = enrollment.uid || enrollment.originalStudentId || d.id;
+        if (enrollmentId === studentId || d.id === student.id || d.id === student.enrollmentId) {
+          batch.update(doc(db, "studentEnrollments", d.id), {
+            deleted: true,
+            deletedSession: selectedSession,
+            deletedAt: serverTimestamp(),
+            teacherDeleted: true
+          });
+        }
       });
-      if (removedEnrollment) {
-        const snap = await getDocs(query(collection(db, "studentEnrollments"), where("session", "==", $("filter-session").value)));
-        let batch = writeBatch(db);
-        snap.forEach(d => {
-          const s = d.data();
-          if ((s.uid || s.originalStudentId) === docId || d.id === docId) {
-            batch.update(doc(db, "studentEnrollments", d.id), { deleted: true, deletedAt: serverTimestamp(), teacherDeleted: true });
-          }
-        });
-        await batch.commit();
-      } else {
-        await deleteDoc(doc(db, "students", docId));
-      }
+
+      await updateDoc(doc(db, "students", student.uid || student.originalStudentId || student.id), {
+        deleted: true,
+        deletedSession: selectedSession,
+        deletedAt: serverTimestamp(),
+        teacherDeleted: true
+      }).catch(async (error) => {
+        if (error.code !== "not-found") throw error;
+      });
+
+      await batch.commit();
       await loadData();
     } catch (err) {
       alert("Error removing student from this session: " + err.message);

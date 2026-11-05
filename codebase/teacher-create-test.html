@@ -116,13 +116,16 @@
 import { auth, db } from './firebase-config.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-auth.js";
 import { 
-  collection, addDoc, serverTimestamp, doc, getDoc 
+  collection, addDoc, serverTimestamp, doc, getDoc, getDocs, query, where
 } from "https://www.gstatic.com/firebasejs/12.6.0/firebase-firestore.js";
 import { applyTeacherSessionLock } from "./teacher-session-lock.js";
 
 const $ = id => document.getElementById(id);
 let teacherId = null;
-$("session").onchange = () => applyTeacherSessionLock(db, "session");
+$("session").onchange = () => {
+  applyTeacherSessionLock(db, "session");
+  loadSubjects();
+};
 applyTeacherSessionLock(db, "session");
 
 // 1. Authenticate Teacher
@@ -130,14 +133,16 @@ onAuthStateChanged(auth, user => {
   if (user) {
     teacherId = user.uid;
     console.log("Teacher logged in:", teacherId);
+    loadSubjects();
   } else {
     window.location.href = "portal.html";
   }
 });
 
-// 2. Load Subjects when Class Changes
-$("className").onchange = async (e) => {
-  const selectedClass = e.target.value;
+// 2. Load Subjects when Class or Session Changes
+async function loadSubjects() {
+  const selectedClass = $("className").value;
+  const selectedSession = $("session").value;
   const subjectSelect = $("subject");
   
   subjectSelect.innerHTML = '<option value="">-- Loading Subjects... --</option>';
@@ -153,34 +158,67 @@ $("className").onchange = async (e) => {
   }
 
   try {
-    // Matches ID format from teacher-register-subjects.html
-    const docId = `${teacherId}_${selectedClass.replace(/\s+/g, '')}`;
-    const docRef = doc(db, "teacher_assignments", docId);
-    const docSnap = await getDoc(docRef);
+    const assignments = [];
+    const sessionDocId = `${teacherId}_${selectedSession.replace(/[^a-zA-Z0-9]+/g, '-')}_${selectedClass.replace(/\s+/g, '')}`;
+    const sessionDocSnap = await getDoc(doc(db, "teacher_assignments", sessionDocId));
+    if (sessionDocSnap.exists()) {
+      assignments.push(sessionDocSnap.data());
+    }
 
-    if (docSnap.exists()) {
-      const data = docSnap.data();
-      const subjects = data.subjects || [];
-      
-      if (subjects.length > 0) {
-        subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
-        subjects.forEach(sub => {
-          const opt = document.createElement("option");
-          opt.value = sub;
-          opt.textContent = sub;
-          subjectSelect.appendChild(opt);
-        });
-      } else {
-        subjectSelect.innerHTML = '<option value="">No subjects found for this class</option>';
+    // Fallback for documents created before session-aware IDs, plus a robust class/session query
+    const legacyDocId = `${teacherId}_${selectedClass.replace(/\s+/g, '')}`;
+    const legacyDocSnap = await getDoc(doc(db, "teacher_assignments", legacyDocId));
+    if (legacyDocSnap.exists()) {
+      const legacyData = legacyDocSnap.data();
+      const legacySession = legacyData.session || "2025/2026";
+      if (legacySession === selectedSession) {
+        assignments.push(legacyData);
       }
+    }
+
+    if (!sessionDocSnap.exists() || assignments.length === 0) {
+      const assignmentQuery = query(
+        collection(db, "teacher_assignments"),
+        where("teacherId", "==", teacherId)
+      );
+      const assignmentSnap = await getDocs(assignmentQuery);
+      assignmentSnap.forEach(assignmentDoc => {
+        const data = assignmentDoc.data();
+        const assignmentSession = data.session || "2025/2026";
+        if (data.className === selectedClass && assignmentSession === selectedSession) {
+          assignments.push(data);
+        }
+      });
+    }
+
+    const subjects = [...new Set(assignments.flatMap(data =>
+      Array.isArray(data.subjects) ? data.subjects : []
+    ))];
+
+    if (subjects.length > 0) {
+      subjectSelect.innerHTML = '<option value="">-- Choose Subject --</option>';
+      subjects.forEach(sub => {
+        const opt = document.createElement("option");
+        opt.value = sub;
+        opt.textContent = sub;
+        subjectSelect.appendChild(opt);
+      });
     } else {
-      subjectSelect.innerHTML = '<option value="">No registered subjects found</option>';
+      const legacySession = selectedSession || "2025/2026";
+      const legacyMatches = assignments.length > 0 &&
+        assignments.some(data => !data.session || (data.session || "2025/2026") === legacySession);
+      if (legacyMatches) {
+        subjectSelect.innerHTML = '<option value="">No subjects found for this class</option>';
+      } else {
+        subjectSelect.innerHTML = '<option value="">No registered subjects found</option>';
+      }
     }
   } catch (err) {
     console.error("Firestore Error:", err);
     subjectSelect.innerHTML = '<option value="">Error loading subjects</option>';
   }
-};
+}
+$("className").onchange = loadSubjects;
 
 // 3. Parser Logic
 function parseQuestions(rawText) {
